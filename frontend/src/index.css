@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #050505;
+  color: #ffffff;
+  overflow-x: hidden;
+  /* 🔴 HIDE DEFAULT CURSOR so the custom one takes over */
+  cursor: none; 
+  font-family: 'Inter', sans-serif;
+}
+
+/* Ensure links and buttons also don't show the system cursor */
+a, button, input, select, textarea {
+  cursor: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00f3ff;
+}

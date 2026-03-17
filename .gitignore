@@ -1,0 +1,14 @@
+# Environments
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# Node
+node_modules/
+dist/

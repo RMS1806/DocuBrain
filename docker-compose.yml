@@ -1,0 +1,190 @@
+version: '3.8'
+
+# Load environment variables from .env file
+# All secrets live in .env — do NOT hard-code credentials here.
+
+services:
+
+  # ─────────────────────────────────────────
+  # 4. THE MEMORY (Database)
+  # ─────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: docubrain_db
+    restart: on-failure
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ─────────────────────────────────────────
+  # 5. THE POST OFFICE (Message Broker)
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: docubrain_redis
+    restart: on-failure
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # ─────────────────────────────────────────
+  # 6. THE WAREHOUSE (Object Storage)
+  # ─────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: docubrain_minio
+    restart: on-failure
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      # MinIO exposes a /minio/health/live endpoint
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+
+  # ─────────────────────────────────────────
+  # 7. THE HIPPOCAMPUS (Vector DB Server)
+  # ─────────────────────────────────────────
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: docubrain_chroma
+    restart: on-failure
+    ports:
+      - "8001:8000"   # External 8001 avoids conflict with backend's 8000
+    volumes:
+      - chroma_server_data:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+      # No user: directive — Chroma must run as its built-in user to own its volume
+    healthcheck:
+      # Pure stdlib urllib ping — no curl/wget needed, works in any Python image.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/heartbeat')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─────────────────────────────────────────
+  # 1. THE BRAIN (API)
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+    container_name: docubrain_backend
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/code
+    # Only start AFTER every dependency is actually healthy
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      chroma:
+        condition: service_healthy
+    environment:
+      # asyncpg driver required for SQLAlchemy 2.0 AsyncSession
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      # psycopg2 URL used internally by database.py for the sync engine (Celery compat)
+      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      # DB index 1 is dedicated to app-level caching (separate from Celery broker)
+      REDIS_CACHE_URL: redis://redis:6379/1
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: docubrain-uploads
+
+  # ─────────────────────────────────────────
+  # 2. THE MUSCLE (Async Worker)
+  # ─────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+    container_name: docubrain_worker
+    restart: on-failure
+    command: celery -A app.docubrain_tasks worker --loglevel=info --concurrency=2
+    volumes:
+      - ./backend:/code
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      chroma:
+        condition: service_healthy
+    environment:
+      # Worker uses sync psycopg2 engine (no asyncpg)
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: docubrain-uploads
+
+  # ─────────────────────────────────────────
+  # 3. THE FACE (Frontend)
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+    container_name: docubrain_frontend
+    restart: on-failure
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    environment:
+      WATCHPACK_POLLING: "true"
+      VITE_API_URL: http://localhost:8000
+
+# ─────────────────────────────────────────
+# PERSISTENT STORAGE VOLUMES
+# ─────────────────────────────────────────
+volumes:
+  postgres_data:
+  minio_data:
+  chroma_server_data:
