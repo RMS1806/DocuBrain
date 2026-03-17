@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { UserPlus, Shield, Users, ChevronRight, Briefcase, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserPlus, Shield, Users, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
 
 const NetworkInterface = ({ onSelectClient }) => {
-  const [role, setRole] = useState(localStorage.getItem('role') || 'client');
+  const [role] = useState(localStorage.getItem('role') || 'client');
   const [email, setEmail] = useState('');
   const [clients, setClients] = useState([]);
   const [status, setStatus] = useState('');
@@ -64,7 +64,7 @@ const NetworkInterface = ({ onSelectClient }) => {
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center">
-      
+
       {/* HEADER */}
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">NEURAL NETWORK</h2>
@@ -75,7 +75,7 @@ const NetworkInterface = ({ onSelectClient }) => {
 
       {/* --- VIEW FOR CLIENTS --- */}
       {role === 'client' && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md bg-zinc-900/50 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl"
@@ -93,8 +93,8 @@ const NetworkInterface = ({ onSelectClient }) => {
           <form onSubmit={handleInvite} className="space-y-4">
             <div>
               <label className="text-[10px] font-mono text-zinc-500 ml-1 mb-1 block">PROFESSIONAL ID (EMAIL)</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="doctor@hospital.net"
@@ -105,13 +105,13 @@ const NetworkInterface = ({ onSelectClient }) => {
 
             {status && (
               <div className={`p-3 rounded-lg text-xs font-mono flex items-center gap-2 ${status.includes('SUCCESS') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                {status.includes('SUCCESS') ? <CheckCircle className="w-4 h-4"/> : <AlertCircle className="w-4 h-4"/>}
+                {status.includes('SUCCESS') ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                 {status.replace('SUCCESS: ', '').replace('ERROR: ', '')}
               </div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full bg-zinc-800 hover:bg-neon-blue text-zinc-300 hover:text-black font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-4"
             >

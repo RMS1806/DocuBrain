@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion'; // Added useMotionValue
 import { Brain, Lock, User, AlertCircle, ChevronRight, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +10,9 @@ const CustomCursor = () => {
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
-    const moveCursor = (e) => { 
-      cursorX.set(e.clientX - 16); 
-      cursorY.set(e.clientY - 16); 
+    const moveCursor = (e) => {
+      cursorX.set(e.clientX - 16);
+      cursorY.set(e.clientY - 16);
     };
     const handleMouseOver = (e) => {
       if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'INPUT' || e.target.closest('button')) {
@@ -27,6 +27,7 @@ const CustomCursor = () => {
       window.removeEventListener('mousemove', moveCursor);
       window.removeEventListener('mouseover', handleMouseOver);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -34,7 +35,7 @@ const CustomCursor = () => {
       className="fixed top-0 left-0 pointer-events-none z-[9999] mix-blend-difference"
       style={{ translateX: cursorX, translateY: cursorY }}
     >
-      <motion.div 
+      <motion.div
         animate={{ scale: isHovering ? 1.5 : 1, opacity: isHovering ? 1 : 0.5 }}
         className="w-8 h-8 rounded-full border-2 border-neon-blue transition-colors duration-200"
       />
@@ -63,7 +64,7 @@ const Login = () => {
       const url = `http://localhost:8000${endpoint}`;
 
       let options = {};
-      
+
       if (isLogin) {
         // Login uses FormData (OAuth2 Standard)
         const formData = new FormData();
@@ -75,10 +76,10 @@ const Login = () => {
         options = {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            email: email, 
-            password: password, 
-            role: role 
+          body: JSON.stringify({
+            email: email,
+            password: password,
+            role: role
           }),
         };
       }
@@ -89,18 +90,18 @@ const Login = () => {
       if (!response.ok) {
         // --- 🔴 FIX: Handle Object Errors (422 Validation) ---
         let errorMessage = "Authentication Failed";
-        
+
         if (data.detail) {
-            if (typeof data.detail === 'string') {
-                // Simple error string
-                errorMessage = data.detail;
-            } else if (Array.isArray(data.detail)) {
-                // FastAPI Validation array (e.g. invalid email format)
-                // We grab the first error message from the list
-                errorMessage = `${data.detail[0].loc[1]}: ${data.detail[0].msg}`;
-            } else {
-                errorMessage = JSON.stringify(data.detail);
-            }
+          if (typeof data.detail === 'string') {
+            // Simple error string
+            errorMessage = data.detail;
+          } else if (Array.isArray(data.detail)) {
+            // FastAPI Validation array (e.g. invalid email format)
+            // We grab the first error message from the list
+            errorMessage = `${data.detail[0].loc[1]}: ${data.detail[0].msg}`;
+          } else {
+            errorMessage = JSON.stringify(data.detail);
+          }
         }
         throw new Error(errorMessage);
         // -----------------------------------------------------
@@ -120,7 +121,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4 font-sans relative overflow-hidden">
-      
+
       {/* 🔴 INSERT CURSOR HERE */}
       <CustomCursor />
 
@@ -129,14 +130,14 @@ const Login = () => {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-30" />
 
       {/* Login Card */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md bg-zinc-900/80 border border-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl relative z-10"
       >
         {/* ... (Rest of your existing Login JSX) ... */}
-         <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-8">
           <div className="p-4 bg-zinc-800/50 rounded-full mb-4 border border-neon-blue/20 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
             <Brain className="w-8 h-8 text-neon-blue" />
           </div>
@@ -178,8 +179,8 @@ const Login = () => {
             </motion.div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="w-full bg-neon-blue hover:bg-cyan-300 text-black font-bold py-3 rounded-xl transition-all duration-300 shadow-[0_0_10px_rgba(0,243,255,0.2)] hover:shadow-[0_0_20px_rgba(0,243,255,0.5)] flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
           >

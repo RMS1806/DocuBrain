@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Video, Copy, ShieldCheck, ExternalLink, Lock, RefreshCw, Power } from 'lucide-react';
 
@@ -10,14 +10,14 @@ const MeetingInterface = () => {
   // Instead of a hardcoded link, we generate a random, complex ID on demand.
   const generateSessionId = () => {
     setIsCreating(true);
-    
+
     // We simulate a secure handshake delay (1.5s) for better UX
     setTimeout(() => {
       // Use the browser's crypto API for a true random secure string
       const array = new Uint32Array(4);
       window.crypto.getRandomValues(array);
       const secureId = 'docubrain-secure-' + Array.from(array).map(n => n.toString(16)).join('-');
-      
+
       setMeetingId(secureId);
       setIsCreating(false);
     }, 1500);
@@ -45,15 +45,15 @@ const MeetingInterface = () => {
 
   return (
     <div className="w-full max-w-4xl h-[500px] flex flex-col items-center justify-center bg-zinc-900/50 border border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl p-8 relative overflow-hidden">
-      
+
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-50" />
       <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-      
+
       <AnimatePresence mode="wait">
         {!meetingId ? (
           /* --- STATE 1: IDLE (No Meeting) --- */
-          <motion.div 
+          <motion.div
             key="create"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -69,17 +69,17 @@ const MeetingInterface = () => {
 
             <h2 className="text-3xl font-bold mb-3 text-white tracking-tight">Secure Neural Uplink</h2>
             <p className="text-zinc-400 mb-8 max-w-md text-sm leading-relaxed">
-              No active session detected. Generate a transient, end-to-end encrypted video channel. 
+              No active session detected. Generate a transient, end-to-end encrypted video channel.
               The link exists only as long as this session is active.
             </p>
 
-            <button 
+            <button
               onClick={generateSessionId}
               disabled={isCreating}
               className="px-8 py-4 bg-neon-blue hover:bg-cyan-400 text-black font-bold rounded-lg flex items-center gap-3 transition-all hover:scale-105 shadow-[0_0_20px_rgba(0,243,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCreating ? (
-                <><RefreshCw className="w-5 h-5 animate-spin"/> ESTABLISHING LINK...</>
+                <><RefreshCw className="w-5 h-5 animate-spin" /> ESTABLISHING LINK...</>
               ) : (
                 <><Lock className="w-5 h-5" /> GENERATE SECURE CHANNEL</>
               )}
@@ -87,7 +87,7 @@ const MeetingInterface = () => {
           </motion.div>
         ) : (
           /* --- STATE 2: ACTIVE SESSION --- */
-          <motion.div 
+          <motion.div
             key="active"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -110,7 +110,7 @@ const MeetingInterface = () => {
                   https://meet.jit.si/{meetingId}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={handleCopy}
                 className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
                 title="Copy Link"
@@ -120,13 +120,13 @@ const MeetingInterface = () => {
             </div>
 
             <div className="flex gap-4">
-              <button 
+              <button
                 onClick={launchMeeting}
                 className="px-6 py-3 bg-white text-black hover:bg-zinc-200 font-bold rounded-lg flex items-center gap-2 transition-all hover:scale-105"
               >
                 <ExternalLink className="w-4 h-4" /> JOIN ROOM
               </button>
-              <button 
+              <button
                 onClick={endSession}
                 className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 font-bold rounded-lg flex items-center gap-2 transition-all hover:bg-red-500/30"
               >

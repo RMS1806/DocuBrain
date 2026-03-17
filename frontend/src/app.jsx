@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login';
 import Dashboard from './Dashboard'; // Make sure you moved your old App.jsx code here!
@@ -7,11 +6,11 @@ import Dashboard from './Dashboard'; // Make sure you moved your old App.jsx cod
 // If no token exists in local storage, kick them back to Login
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
-  
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return children;
 };
 
@@ -23,13 +22,13 @@ function App() {
       <Route path="/login" element={<Login />} />
 
       {/* 2. Protected Dashboard Route */}
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* 3. Default Redirect (Catch-all) */}

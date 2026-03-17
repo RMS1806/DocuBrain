@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Bot, User, Sparkles, FileText,
@@ -61,8 +61,8 @@ const MessageBubble = ({ msg, isStreaming }) => {
       {/* Avatar */}
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ring-1 ${isUser
-            ? 'bg-cyan-500/20 ring-cyan-500/40 text-cyan-400'
-            : 'bg-zinc-800 ring-white/10 text-zinc-400'
+          ? 'bg-cyan-500/20 ring-cyan-500/40 text-cyan-400'
+          : 'bg-zinc-800 ring-white/10 text-zinc-400'
           }`}
       >
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -72,8 +72,8 @@ const MessageBubble = ({ msg, isStreaming }) => {
       <div className={`flex flex-col max-w-[78%] gap-2 ${isUser ? 'items-end' : 'items-start'}`}>
         <div
           className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${isUser
-              ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-medium shadow-lg shadow-cyan-500/20'
-              : 'bg-white/5 border border-white/10 text-zinc-200 backdrop-blur-sm'
+            ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-medium shadow-lg shadow-cyan-500/20'
+            : 'bg-white/5 border border-white/10 text-zinc-200 backdrop-blur-sm'
             }`}
         >
           {msg.content}
@@ -109,8 +109,8 @@ const SessionRow = ({ session, isActive, onClick, onDelete }) => (
     exit={{ opacity: 0, x: -16 }}
     whileHover={{ scale: 1.02 }}
     className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${isActive
-        ? 'bg-cyan-500/10 border border-cyan-500/30'
-        : 'hover:bg-white/5 border border-transparent'
+      ? 'bg-cyan-500/10 border border-cyan-500/30'
+      : 'hover:bg-white/5 border border-transparent'
       }`}
     onClick={onClick}
   >
@@ -342,7 +342,7 @@ const ChatInterface = ({ targetUserId }) => {
       const decoder = new TextDecoder('utf-8');
       // leftover holds an incomplete SSE event between chunks
       let leftover = '';
-
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -506,13 +506,12 @@ const ChatInterface = ({ targetUserId }) => {
         {/* Chat header */}
         <div className="px-5 py-3.5 border-b border-white/8 bg-zinc-900/80 backdrop-blur-xl flex items-center gap-3">
           <div
-            className={`w-2 h-2 rounded-full transition-all duration-500 ${
-              streamingMsgId
-                ? 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,1)] animate-pulse'
-                : activeSessionId
-                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
-                  : 'bg-zinc-600'
-            }`}
+            className={`w-2 h-2 rounded-full transition-all duration-500 ${streamingMsgId
+              ? 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,1)] animate-pulse'
+              : activeSessionId
+                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                : 'bg-zinc-600'
+              }`}
           />
           <span className="text-sm font-medium text-zinc-300 truncate">
             {streamingMsgId
