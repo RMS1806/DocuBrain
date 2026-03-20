@@ -41,13 +41,8 @@ RUN groupadd --system appgroup && \
 # ── HuggingFace model cache ────────────────────────────────────────────────────
 # Bake the cache path into the image so it is set for every process
 # (uvicorn AND celery worker) regardless of how the container is started.
-# /home/appuser/.cache is owned by appuser so writes never fail.
-ENV HF_HOME=/home/appuser/.cache/huggingface \
-    TRANSFORMERS_CACHE=/home/appuser/.cache/huggingface
 
-# Pre-create the cache dir and hand it to appuser before switching users
-RUN mkdir -p /home/appuser/.cache/huggingface && \
-    chown -R appuser:appgroup /home/appuser
+
 
 # Copy application code
 COPY --chown=appuser:appgroup . .
