@@ -42,14 +42,18 @@ from app.chat_router import router as chat_router
 
 logger = logging.getLogger(__name__)
 
-# ── MinIO client (sync SDK — always called via thread executor) ────────────────
+# ── S3-compatible client (sync SDK — always called via thread executor) ────────
+# In production: omit S3_ENDPOINT → connects to real AWS S3 with TLS.
+# Locally:       set S3_ENDPOINT=minio:9000 → connects to MinIO without TLS.
+_S3_ENDPOINT = os.getenv("S3_ENDPOINT")  # Only set for local MinIO; omit in prod
 minio_client = Minio(
-    os.getenv("MINIO_ENDPOINT", "minio:9000"),
-    access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
-    secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
-    secure=False,
+    _S3_ENDPOINT or "s3.amazonaws.com",
+    access_key=os.getenv("AWS_ACCESS_KEY_ID", "minioadmin"),
+    secret_key=os.getenv("AWS_SECRET_ACCESS_KEY", "minioadmin"),
+    region=os.getenv("AWS_REGION", "eu-north-1"),
+    secure=(_S3_ENDPOINT is None),  # TLS on for real S3, off for local MinIO
 )
-MINIO_BUCKET = os.getenv("MINIO_BUCKET", "docubrain-uploads")
+MINIO_BUCKET = os.getenv("S3_BUCKET_NAME", "docubrain-uploads-1806")
 
 # ── Redis cache client (DB 1 — separate from Celery broker on DB 0) ───────────
 _REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL", "redis://redis:6379/1")
@@ -145,9 +149,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        _FRONTEND_URL,
+        "http://localhost:5173",  # Always allow local dev
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

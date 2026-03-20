@@ -48,14 +48,16 @@ celery_app.conf.update(
     task_track_started=True,
 )
 
-# ── MinIO client ───────────────────────────────────────────────────────────────
+# ── S3-compatible client ───────────────────────────────────────────────────────
+_S3_ENDPOINT = os.getenv("S3_ENDPOINT")  # Only set for local MinIO; omit in prod
 minio_client = Minio(
-    os.getenv("MINIO_ENDPOINT", "minio:9000"),
-    access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
-    secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
-    secure=False,
+    _S3_ENDPOINT or "s3.amazonaws.com",
+    access_key=os.getenv("AWS_ACCESS_KEY_ID", "minioadmin"),
+    secret_key=os.getenv("AWS_SECRET_ACCESS_KEY", "minioadmin"),
+    region=os.getenv("AWS_REGION", "eu-north-1"),
+    secure=(_S3_ENDPOINT is None),
 )
-MINIO_BUCKET = os.getenv("MINIO_BUCKET", "docubrain-uploads")
+MINIO_BUCKET = os.getenv("S3_BUCKET_NAME", "docubrain-uploads-1806")
 
 
 def _get_minio_object_with_retry(
