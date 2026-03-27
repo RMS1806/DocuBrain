@@ -131,7 +131,6 @@ requests-oauthlib==2.0.0
 rlp==4.1.0
 rpds-py==0.28.0
 rsa==4.9.1
-safetensors==0.6.2
 scikit-learn==1.7.2
 scipy==1.15.3
 sentence-transformers==5.1.2
@@ -146,14 +145,11 @@ streamlit==1.51.0
 sympy==1.14.0
 tenacity==9.1.2
 threadpoolctl==3.6.0
-tokenizers==0.22.1
 toml==0.10.2
 toolz==1.1.0
-torch==2.7.1
 tornado==6.5.1
 tqdm==4.67.1
 traitlets==5.14.3
-transformers==4.57.1
 types-requests==2.32.4.20250913
 typing-inspection==0.4.2
 typing_extensions==4.15.0

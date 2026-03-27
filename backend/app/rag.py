@@ -41,9 +41,10 @@ CHUNK_OVERLAP = 100    # overlap between consecutive chunks
 
 # ── ChromaDB helpers ──────────────────────────────────────────────────────────
 def _get_chroma_collection() -> chromadb.Collection:
-    """Return the ChromaDB collection using a raw HTTP client (no embedding fn)."""
-    client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
-    return client.get_or_create_collection(COLLECTION)
+    """Return the ChromaDB collection using a persistent local client."""
+    # This creates a folder called "chroma_db" in your backend directory
+    client = chromadb.PersistentClient(path="./chroma_db")
+    return client.get_or_create_collection(name=COLLECTION)
 
 
 # ── Text chunking ─────────────────────────────────────────────────────────────
