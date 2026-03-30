@@ -39,13 +39,24 @@ CHUNK_SIZE    = 1500   # characters per chunk
 CHUNK_OVERLAP = 100    # overlap between consecutive chunks
 
 
-# ── ChromaDB helpers ──────────────────────────────────────────────────────────
+from chromadb.api.types import EmbeddingFunction, Documents, Embeddings
+
+# 1. Create a fake embedding function to act as a circuit breaker
+class DummyEmbeddingFunction(EmbeddingFunction):
+    def __call__(self, input: Documents) -> Embeddings:
+        # This will never actually run because you pass raw embeddings in your upsert/query calls!
+        return [[0.0] * 768] * len(input) 
+
+# 2. Update your collection fetcher
 def _get_chroma_collection() -> chromadb.Collection:
     """Return the ChromaDB collection using a persistent local client."""
-    # This creates a folder called "chroma_db" in your backend directory
     client = chromadb.PersistentClient(path="./chroma_db")
-    return client.get_or_create_collection(name=COLLECTION)
-
+    
+    # CRITICAL: Pass the dummy function so Chroma DOES NOT load its 400MB default model into RAM
+    return client.get_or_create_collection(
+        name=COLLECTION,
+        embedding_function=DummyEmbeddingFunction()
+    )
 
 # ── Text chunking ─────────────────────────────────────────────────────────────
 def _chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> List[str]:
