@@ -32,17 +32,8 @@ COPY --from=builder /install /usr/local
 WORKDIR /code
 
 # ── Non-root user for security ─────────────────────────────────────────────────
-# useradd --create-home gives appuser a real home dir (/home/appuser).
-# Without this, the home resolves to /nonexistent and sentence-transformers
-# crashes trying to write its model cache there.
 RUN groupadd --system appgroup && \
     useradd --system --create-home --gid appgroup appuser
-
-# ── HuggingFace model cache ────────────────────────────────────────────────────
-# Bake the cache path into the image so it is set for every process
-# (uvicorn AND celery worker) regardless of how the container is started.
-
-
 
 # Copy application code
 COPY --chown=appuser:appgroup . .

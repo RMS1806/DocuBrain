@@ -1,1 +1,45 @@
+# ── DocuBrain .dockerignore ───────────────────────────────────────────────────
+# Prevents local dev artifacts and heavy caches from bloating the Docker context.
+
+# Local vector DB data (persisted via Docker volume, NOT baked into image)
 chroma_db/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Git
+.git/
+.gitignore
+.github/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local upload directories (data lives in MinIO, not in image)
+uploaded_files/
+uploads/
+
+# Documentation (not needed in production image)
+*.md
+LICENSE
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+# Docker (prevent recursive context)
+Dockerfile
+docker-compose*.yml
