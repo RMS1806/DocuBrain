@@ -120,17 +120,34 @@ async def lifespan(app: FastAPI):
     # ── Startup ────────────────────────────────────────────────────────────────
     logger.info("🔄 DocuBrain starting up…")
 
-    # 1. Wait for Postgres (async exponential backoff)
-    await wait_for_db()
+    # 1. Wait for Postgres (async exponential backoff + SSL)
+    try:
+        await wait_for_db()
+    except RuntimeError as exc:
+        logger.critical("💀 Database startup probe FAILED: %s", exc)
+        raise
 
     # 2. Create / migrate schema with the async engine
-    async with async_engine.begin() as conn:
-        logger.info("📐 Applying database schema (create_all)…")
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("✅ Schema applied.")
+    try:
+        async with async_engine.begin() as conn:
+            logger.info("📐 Applying database schema (create_all)…")
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("✅ Schema applied.")
+    except Exception as exc:
+        logger.critical(
+            "💀 Schema creation failed: %s: %s",
+            exc.__class__.__name__, exc,
+        )
+        raise
 
-    # 3. Initialise MinIO bucket (sync SDK → thread executor)
-    await anyio.to_thread.run_sync(_minio_init_bucket_sync)
+    # 3. Initialise MinIO / S3 bucket (sync SDK → thread executor)
+    try:
+        await anyio.to_thread.run_sync(_minio_init_bucket_sync)
+    except Exception as exc:
+        logger.warning(
+            "⚠️ MinIO/S3 bucket init failed (non-fatal on cloud): %s: %s",
+            exc.__class__.__name__, exc,
+        )
 
     logger.info("🎉 DocuBrain backend is ready.")
     yield
