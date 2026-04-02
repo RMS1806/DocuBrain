@@ -42,6 +42,13 @@ COPY --chown=appuser:appgroup . .
 COPY --chown=appuser:appgroup entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# ── Writable runtime directories ───────────────────────────────────────────────
+# ChromaDB writes its persistent store to ./chroma_db
+# documents.py saves uploaded PDFs to ./uploads
+# Both must exist and be owned by appuser BEFORE switching to non-root.
+RUN mkdir -p /code/chroma_db /code/uploads && \
+    chown -R appuser:appgroup /code
+
 USER appuser
 
 EXPOSE 8000
