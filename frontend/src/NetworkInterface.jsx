@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { UserPlus, Shield, Users, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { API_BASE } from './api';
 
 const NetworkInterface = ({ onSelectClient }) => {
   const [role] = useState(localStorage.getItem('role') || 'client');
@@ -19,7 +20,7 @@ const NetworkInterface = ({ onSelectClient }) => {
   const fetchClients = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/professional/clients", {
+      const res = await fetch(`${API_BASE}/professional/clients`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
@@ -39,7 +40,7 @@ const NetworkInterface = ({ onSelectClient }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/link/invite", {
+      const res = await fetch(`${API_BASE}/link/invite`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

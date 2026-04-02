@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { FileText, CheckCircle, Clock, Loader2, Database, Trash2 } from 'lucide-react';
+import { API_BASE } from './api';
 
 const DocumentList = ({ documents, isLoading, onDelete }) => {
 
@@ -10,7 +11,7 @@ const DocumentList = ({ documents, isLoading, onDelete }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/documents/${docId}`, {
+      const res = await fetch(`${API_BASE}/documents/${docId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });

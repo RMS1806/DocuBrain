@@ -4,8 +4,9 @@ import {
   Send, Bot, User, Sparkles, FileText,
   Plus, MessageSquare, Trash2, ChevronRight, Loader2
 } from 'lucide-react';
+import { API_BASE } from './api';
 
-const API = 'http://localhost:8000';
+const API = API_BASE;
 
 const getToken = () => localStorage.getItem('token');
 

@@ -172,7 +172,10 @@ app.add_middleware(
     allow_origins=[
         _FRONTEND_URL,
         "http://localhost:5173",  # Always allow local dev
+        "http://localhost:3000",  # CRA/Next local dev
     ],
+    # Allow ALL *.vercel.app subdomains (production + preview deploys)
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

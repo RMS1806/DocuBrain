@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
 import { Upload, FileText, Cpu, LogOut, User, MessageSquare, Database, Video, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from './api';
 import DocumentList from './DocumentList';
 import ChatInterface from './ChatInterface';
 import MeetingInterface from './MeetingInterface';
@@ -91,7 +92,7 @@ function Dashboard() {
     setIsLoadingDocs(true);
     try {
       const token = localStorage.getItem("token");
-      let url = "http://localhost:8000/documents/";
+      let url = `${API_BASE}/documents/`;
       if (targetId) url += `?target_user_id=${targetId}`;
       const res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
       if (res.ok) {
@@ -129,7 +130,7 @@ function Dashboard() {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await fetch("http://localhost:8000/upload/", {
+      const response = await fetch(`${API_BASE}/upload/`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
         body: formData,

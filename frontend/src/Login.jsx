@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion'; // Added useMotionValue
 import { Brain, Lock, User, AlertCircle, ChevronRight, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from './api';
 
 // --- ADDED CURSOR COMPONENT ---
 const CustomCursor = () => {
@@ -61,7 +62,7 @@ const Login = () => {
 
     try {
       const endpoint = isLogin ? "/auth/login" : "/auth/register";
-      const url = `http://localhost:8000${endpoint}`;
+      const url = `${API_BASE}${endpoint}`;
 
       let options = {};
 
@@ -113,7 +114,19 @@ const Login = () => {
       navigate('/dashboard');
 
     } catch (err) {
-      setError(err.message);
+      // ── Detailed error logging for debugging production issues ──
+      console.error('[DocuBrain Auth Error]', {
+        message: err.message,
+        name: err.name,
+        url: `${API_BASE}${isLogin ? '/auth/login' : '/auth/register'}`,
+        // "Failed to fetch" = network/CORS block; otherwise it's an HTTP error
+        likelyCause: err.message === 'Failed to fetch'
+          ? 'CORS block or network unreachable — check browser Network tab'
+          : 'Server returned an error — see message above',
+      });
+      setError(err.message === 'Failed to fetch'
+        ? 'Cannot reach server. Please check your connection or try again later.'
+        : err.message);
     } finally {
       setLoading(false);
     }
