@@ -31,15 +31,12 @@ logger = logging.getLogger(__name__)
 # Celery worker (sync): psycopg2 driver — imported via SYNC_DATABASE_URL or by
 # stripping the +asyncpg suffix so one env var can serve both.
 
-_RAW_DB_URL: str = os.getenv(
-    "DATABASE_URL",
-    "postgresql://docubrain_user:secure_password@db/docubrain_db",
-)
+_RAW_DB_URL: str = os.getenv("DATABASE_URL")
 
 # ── FIX 1: Normalize postgres:// → postgresql:// ──────────────────────────────
 # Render, Heroku, and some Supabase dashboard URIs use the legacy `postgres://`
 # scheme. SQLAlchemy 2.0+ only accepts `postgresql://`.
-if _RAW_DB_URL.startswith("postgres://"):
+if _RAW_DB_URL and _RAW_DB_URL.startswith("postgres://"):
     _RAW_DB_URL = _RAW_DB_URL.replace("postgres://", "postgresql://", 1)
 
 logger.info("🔗 Raw DB URL (scheme): %s://...", _RAW_DB_URL.split("://")[0])

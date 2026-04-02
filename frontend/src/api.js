@@ -8,4 +8,4 @@
  *   ✅  https://docubrain-zifb.onrender.com
  *   ❌  https://docubrain-zifb.onrender.com/
  */
-export const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');

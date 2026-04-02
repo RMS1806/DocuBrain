@@ -25,13 +25,13 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 logger = logging.getLogger(__name__)
 
 # ── Gemini client config ───────────────────────────────────────────────────────
-_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=_GEMINI_API_KEY)
 
 EMBED_MODEL = "models/gemini-embedding-001"   # Updated to current active model
 CHAT_MODEL  = "gemini-2.5-flash"
-CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
-CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+CHROMA_HOST = os.getenv("CHROMA_HOST")
+CHROMA_PORT = int(os.getenv("CHROMA_PORT"))
 COLLECTION  = "docubrain_collection"
 
 # Text chunking parameters for vectorisation

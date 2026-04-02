@@ -32,7 +32,7 @@ from app import models, rag
 logger = get_task_logger(__name__)
 
 # ── Celery app ─────────────────────────────────────────────────────────────────
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL")
 
 celery_app = Celery(
     "docubrain_tasks",
@@ -52,12 +52,12 @@ celery_app.conf.update(
 _S3_ENDPOINT = os.getenv("S3_ENDPOINT")  # Only set for local MinIO; omit in prod
 minio_client = Minio(
     _S3_ENDPOINT or "s3.amazonaws.com",
-    access_key=os.getenv("AWS_ACCESS_KEY_ID", "minioadmin"),
-    secret_key=os.getenv("AWS_SECRET_ACCESS_KEY", "minioadmin"),
-    region=os.getenv("AWS_REGION", "eu-north-1"),
-    secure=(_S3_ENDPOINT is None),
+    access_key=os.getenv("AWS_ACCESS_KEY_ID"),
+    secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region=os.getenv("AWS_REGION"),
+    secure=(_S3_ENDPOINT is None),  # TLS on for real S3, off for local MinIO
 )
-MINIO_BUCKET = os.getenv("S3_BUCKET_NAME", "docubrain-uploads-1806")
+MINIO_BUCKET = os.getenv("S3_BUCKET_NAME")
 
 
 def _get_minio_object_with_retry(
