@@ -30,7 +30,7 @@ from app import models, rag
 logger = get_task_logger(__name__)
 
 # ── Celery app ─────────────────────────────────────────────────────────────────
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL") or "redis://redis:6379/0"
 
 celery_app = Celery(
     "docubrain_tasks",

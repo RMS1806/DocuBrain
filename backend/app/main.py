@@ -48,7 +48,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 # ── Redis cache client (DB 1 — separate from Celery broker on DB 0) ───────────
-_REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL", "redis://redis:6379/1")
+_REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL") or os.getenv("REDIS_URL") or "redis://redis:6379/1"
 _redis: Optional[aioredis.Redis] = None
 
 
@@ -115,7 +115,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-_FRONTEND_URL = os.getenv("FRONTEND_URL", "https://yourfrontend.vercel.app").rstrip("/")
+_FRONTEND_URL = (os.getenv("FRONTEND_URL") or "https://yourfrontend.vercel.app").rstrip("/")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
