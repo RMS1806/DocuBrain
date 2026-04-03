@@ -42,21 +42,13 @@ from app.chat_router import router as chat_router
 
 logger = logging.getLogger(__name__)
 
-# ── S3-compatible client (sync SDK — always called via thread executor) ────────
-# In production: omit S3_ENDPOINT → connects to real AWS S3 with TLS.
-# Locally:       set S3_ENDPOINT=minio:9000 → connects to MinIO without TLS.
-_S3_ENDPOINT = os.getenv("S3_ENDPOINT")  # Only set for local MinIO; omit in prod
-minio_client = Minio(
-    _S3_ENDPOINT or "s3.amazonaws.com",
-    access_key=os.getenv("AWS_ACCESS_KEY_ID"),
-    secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region=os.getenv("AWS_REGION"),
-    secure=(_S3_ENDPOINT is None),  # TLS on for real S3, off for local MinIO
-)
-MINIO_BUCKET = os.getenv("S3_BUCKET_NAME")
+# ── Secure Local Storage Configuration ─────────────────────────────────────────
+UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 
 # ── Redis cache client (DB 1 — separate from Celery broker on DB 0) ───────────
-_REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL")
+_REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL", "redis://redis:6379/1")
 _redis: Optional[aioredis.Redis] = None
 
 
@@ -75,43 +67,6 @@ def _get_redis() -> aioredis.Redis:
 
 def _docs_cache_key(user_id: int, target_user_id: Optional[int] = None) -> str:
     return f"docs:{user_id}:{target_user_id or ''}"
-
-
-# ── MinIO helpers (sync — run via anyio thread executor) ──────────────────────
-def _minio_init_bucket_sync() -> None:
-    """Create the uploads bucket if it doesn't exist."""
-    import time
-
-    delay = 2.0
-    for attempt in range(1, 9):
-        try:
-            if not minio_client.bucket_exists(MINIO_BUCKET):
-                logger.info("🪣 Creating MinIO bucket: %s", MINIO_BUCKET)
-                minio_client.make_bucket(MINIO_BUCKET)
-            else:
-                logger.info("✅ MinIO bucket '%s' already exists.", MINIO_BUCKET)
-            return
-        except (S3Error, Exception) as exc:
-            if attempt == 8:
-                logger.critical("💀 Cannot initialise MinIO after 8 attempts.")
-                raise
-            logger.warning(
-                "⏳ MinIO not ready (attempt %d/8). Retrying in %.1fs… (%s)",
-                attempt, delay, exc,
-            )
-            time.sleep(delay)
-            delay = min(delay * 2, 30)
-
-
-def _minio_put_sync(path: str, data: bytes, content_type: str) -> None:
-    import io
-    minio_client.put_object(
-        MINIO_BUCKET, path, io.BytesIO(data), len(data), content_type=content_type
-    )
-
-
-def _minio_remove_sync(path: str) -> None:
-    minio_client.remove_object(MINIO_BUCKET, path)
 
 
 # ── Application lifespan ───────────────────────────────────────────────────────
@@ -140,14 +95,8 @@ async def lifespan(app: FastAPI):
         )
         raise
 
-    # 3. Initialise MinIO / S3 bucket (sync SDK → thread executor)
-    try:
-        await anyio.to_thread.run_sync(_minio_init_bucket_sync)
-    except Exception as exc:
-        logger.warning(
-            "⚠️ MinIO/S3 bucket init failed (non-fatal on cloud): %s: %s",
-            exc.__class__.__name__, exc,
-        )
+
+    # 3. Local Uploads Directory initialized at startup module level.
 
     logger.info("🎉 DocuBrain backend is ready.")
     yield
@@ -166,7 +115,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-_FRONTEND_URL = os.getenv("FRONTEND_URL")
+_FRONTEND_URL = os.getenv("FRONTEND_URL", "https://yourfrontend.vercel.app").rstrip("/")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -224,18 +173,19 @@ async def upload_document(
         )
 
     file_uuid  = str(uuid.uuid4())
-    minio_path = f"{file_uuid}/{file.filename}"
+    safe_filename = file.filename.replace(' ', '_').replace('/', '')
+    local_path = os.path.join(UPLOAD_DIR, f"{file_uuid}_{safe_filename}")
     file_content = await file.read()
 
-    # Upload to MinIO in a thread — never block the event loop with sync I/O
+    # Upload to Local disk in a thread — never block the event loop with sync I/O
     await anyio.to_thread.run_sync(
-        lambda: _minio_put_sync(minio_path, file_content, file.content_type)
+        lambda: open(local_path, "wb").write(file_content)
     )
 
     # Save document record
     new_doc = models.Document(
         filename=file.filename,
-        minio_path=minio_path,
+        minio_path=local_path, # Repurposing to store the secure local path
         content_type=real_file_type,
         file_size=len(file_content),
         user_id=current_user.id,
@@ -428,11 +378,14 @@ async def delete_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Delete from MinIO (sync SDK → thread executor)
+    # Delete from Disk (sync SDK → thread executor)
     try:
-        await anyio.to_thread.run_sync(lambda: _minio_remove_sync(doc.minio_path))
+        def _del_file():
+            if os.path.exists(doc.minio_path):
+                os.remove(doc.minio_path)
+        await anyio.to_thread.run_sync(_del_file)
     except Exception as exc:
-        logger.warning("⚠️ MinIO delete warning: %s", exc)
+        logger.warning("⚠️ Disk delete warning: %s", exc)
 
     # Delete from ChromaDB (async wrapper — also uses thread executor)
     await async_delete_from_vector_store(doc_id)

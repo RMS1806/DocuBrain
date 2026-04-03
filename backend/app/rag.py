@@ -30,8 +30,8 @@ genai.configure(api_key=_GEMINI_API_KEY)
 
 EMBED_MODEL = "models/gemini-embedding-001"   # Updated to current active model
 CHAT_MODEL  = "gemini-2.5-flash"
-CHROMA_HOST = os.getenv("CHROMA_HOST")
-CHROMA_PORT = int(os.getenv("CHROMA_PORT"))
+CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
+CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
 COLLECTION  = "docubrain_collection"
 
 # Text chunking parameters for vectorisation
@@ -49,8 +49,9 @@ class DummyEmbeddingFunction(EmbeddingFunction):
 
 # 2. Update your collection fetcher
 def _get_chroma_collection() -> chromadb.Collection:
-    """Return the ChromaDB collection using a persistent local client."""
-    client = chromadb.PersistentClient(path="./chroma_db")
+    # Use an absolute path safe for Docker/Render permissions
+    CHROMA_DIR = os.path.join(os.getcwd(), "chroma_db")
+    client = chromadb.PersistentClient(path=CHROMA_DIR)
     
     # CRITICAL: Pass the dummy function so Chroma DOES NOT load its 400MB default model into RAM
     return client.get_or_create_collection(

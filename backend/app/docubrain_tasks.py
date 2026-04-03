@@ -21,8 +21,6 @@ import time
 
 from celery import Celery
 from celery.utils.log import get_task_logger
-from minio import Minio
-from minio.error import S3Error
 import pypdf
 from sqlalchemy.exc import OperationalError
 
@@ -32,7 +30,7 @@ from app import models, rag
 logger = get_task_logger(__name__)
 
 # ── Celery app ─────────────────────────────────────────────────────────────────
-REDIS_URL = os.getenv("REDIS_URL")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 celery_app = Celery(
     "docubrain_tasks",
@@ -48,42 +46,7 @@ celery_app.conf.update(
     task_track_started=True,
 )
 
-# ── S3-compatible client ───────────────────────────────────────────────────────
-_S3_ENDPOINT = os.getenv("S3_ENDPOINT")  # Only set for local MinIO; omit in prod
-minio_client = Minio(
-    _S3_ENDPOINT or "s3.amazonaws.com",
-    access_key=os.getenv("AWS_ACCESS_KEY_ID"),
-    secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region=os.getenv("AWS_REGION"),
-    secure=(_S3_ENDPOINT is None),  # TLS on for real S3, off for local MinIO
-)
-MINIO_BUCKET = os.getenv("S3_BUCKET_NAME")
 
-
-def _get_minio_object_with_retry(
-    bucket: str,
-    path: str,
-    max_retries: int = 5,
-    initial_delay: float = 2.0,
-) -> bytes:
-    """Download an object from MinIO, retrying on transient failures."""
-    delay = initial_delay
-    for attempt in range(1, max_retries + 1):
-        try:
-            response = minio_client.get_object(bucket, path)
-            data = response.read()
-            response.close()
-            response.release_conn()
-            return data
-        except (S3Error, Exception) as exc:
-            if attempt == max_retries:
-                raise
-            logger.warning(
-                "⏳ MinIO fetch failed (attempt %d/%d). Retrying in %.1fs… (%s)",
-                attempt, max_retries, delay, exc,
-            )
-            time.sleep(delay)
-            delay = min(delay * 2, 30)
 
 
 # ── Task ───────────────────────────────────────────────────────────────────────
@@ -108,9 +71,15 @@ def process_document_task(self, doc_id: int):
         doc.status = "processing"
         db.commit()
 
-        # 3. Download PDF from MinIO
-        logger.info("⬇️ Downloading %s from Object Storage…", doc.minio_path)
-        pdf_data = _get_minio_object_with_retry(MINIO_BUCKET, doc.minio_path)
+        # 3. Read PDF from Secure Local Storage
+        logger.info("⬇️ Reading %s from Local Disk…", doc.minio_path)
+        
+        file_path = doc.minio_path
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Missing file payload at {file_path}")
+            
+        with open(file_path, "rb") as f:
+            pdf_data = f.read()
 
         # 4. Extract text
         logger.info("📖 Extracting text from PDF…")
@@ -145,7 +114,7 @@ def process_document_task(self, doc_id: int):
         logger.info("✅ FINISHED: %s has been vectorised.", doc.filename)
         return "Success"
 
-    except (S3Error, OperationalError, Exception) as exc:
+    except (FileNotFoundError, OperationalError, Exception) as exc:
         logger.exception("❌ CRITICAL FAILURE for doc_id=%d: %s", doc_id, exc)
         try:
             doc.status = "failed"

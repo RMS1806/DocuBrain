@@ -31,7 +31,10 @@ logger = logging.getLogger(__name__)
 # Celery worker (sync): psycopg2 driver — imported via SYNC_DATABASE_URL or by
 # stripping the +asyncpg suffix so one env var can serve both.
 
-_RAW_DB_URL: str = os.getenv("DATABASE_URL")
+_RAW_DB_URL: str = os.getenv("DATABASE_URL", "")
+
+if not _RAW_DB_URL:
+    raise RuntimeError("CRITICAL ERROR: DATABASE_URL environment variable is missing.")
 
 # ── FIX 1: Normalize postgres:// → postgresql:// ──────────────────────────────
 # Render, Heroku, and some Supabase dashboard URIs use the legacy `postgres://`

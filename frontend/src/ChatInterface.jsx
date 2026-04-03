@@ -20,8 +20,13 @@ const apiFetch = async (path, options = {}) => {
     },
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Request failed (${res.status})`);
+    const textBody = await res.text();
+    try {
+      const err = JSON.parse(textBody);
+      throw new Error(err.detail || `Request failed (${res.status})`);
+    } catch {
+      throw new Error(`Request failed (${res.status}): ${textBody.substring(0, 80)}`);
+    }
   }
   return res.status === 204 ? null : res.json();
 };
@@ -334,8 +339,13 @@ const ChatInterface = ({ targetUserId }) => {
       );
 
       if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.detail || `Stream request failed (${res.status})`);
+        const textBody = await res.text();
+        try {
+          const errBody = JSON.parse(textBody);
+          throw new Error(errBody.detail || `Stream request failed (${res.status})`);
+        } catch {
+          throw new Error(`Stream request failed (${res.status}): ${textBody.substring(0, 80)}`);
+        }
       }
 
       // 4. Read the body as a stream

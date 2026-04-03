@@ -161,8 +161,13 @@ function Dashboard() {
 
         setTimeout(() => { setFile(null); setUploading(false); setUploadStatus("AWAITING INPUT"); }, 3000);
       } else {
-        const errorData = await response.json();
-        setUploadStatus("FAILED: " + (errorData.detail || "Error"));
+        const textData = await response.text();
+        try {
+          const errorData = JSON.parse(textData);
+          setUploadStatus("FAILED: " + (errorData.detail || "Error"));
+        } catch {
+          setUploadStatus(`FAILED (${response.status}): ${textData.substring(0, 50)}...`);
+        }
         setUploading(false);
       }
     } catch (error) {
