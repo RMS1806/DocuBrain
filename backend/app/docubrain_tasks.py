@@ -31,9 +31,20 @@ logger = get_task_logger(__name__)
 
 # ── Celery app ─────────────────────────────────────────────────────────────────
 REDIS_URL = os.getenv("CELERY_BROKER_URL") or os.getenv("REDIS_URL") or "redis://redis:6379/0"
+
+# Handle DB index without breaking query parameters
 if "REDIS_URL" in os.environ and "CELERY_BROKER_URL" not in os.environ:
-    if not any(REDIS_URL.endswith(f"/{i}") for i in range(16)):
-        REDIS_URL = f"{REDIS_URL.rstrip('/')}/0"
+    if not any(f"/{i}" in REDIS_URL for i in range(16)):
+        if "?" in REDIS_URL:
+            parts = REDIS_URL.split("?")
+            REDIS_URL = f"{parts[0].rstrip('/')}/0?{parts[1]}"
+        else:
+            REDIS_URL = f"{REDIS_URL.rstrip('/')}/0"
+
+# Fix Celery's strict rediss:// query parameter requirement
+if REDIS_URL.startswith("rediss://") and "ssl_cert_reqs" not in REDIS_URL:
+    sep = "&" if "?" in REDIS_URL else "?"
+    REDIS_URL = f"{REDIS_URL}{sep}ssl_cert_reqs=CERT_NONE"
 
 celery_app = Celery(
     "docubrain_tasks",
