@@ -16,6 +16,9 @@ set -e
 # Fall back to 8000 so local docker-compose keeps working without changes.
 APP_PORT="${PORT:-8000}"
 
+echo "🔥 Booting Neural Worker (Celery)..."
+celery -A app.docubrain_tasks worker --loglevel=info &
+
 echo "🚀 Starting DocuBrain backend on port ${APP_PORT}..."
 
 exec uvicorn app.main:app \
