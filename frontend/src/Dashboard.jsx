@@ -77,7 +77,7 @@ const CustomCursor = () => {
 
 // --- MAIN DASHBOARD ---
 function Dashboard() {
-  const [setFile] = useState(null);
+  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("AWAITING INPUT");
   const [documents, setDocuments] = useState([]);
