@@ -32,7 +32,12 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 # ── Redis cache client ─────────────────────────────────────────────────────────
 # DB index 1 is dedicated to app-level caching (not the Celery broker on DB 0).
-_REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL") or os.getenv("REDIS_URL") or "redis://redis:6379/1"
+_RAW_CACHE_URL = os.getenv("REDIS_CACHE_URL") or os.getenv("REDIS_URL") or "redis://redis:6379/1"
+if "REDIS_URL" in os.environ and "REDIS_CACHE_URL" not in os.environ:
+    if not any(_RAW_CACHE_URL.endswith(f"/{i}") for i in range(16)):
+        _RAW_CACHE_URL = f"{_RAW_CACHE_URL.rstrip('/')}/1"
+_REDIS_CACHE_URL = _RAW_CACHE_URL
+
 _redis: Optional[aioredis.Redis] = None
 
 

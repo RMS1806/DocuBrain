@@ -49,12 +49,19 @@ const NetworkInterface = ({ onSelectClient }) => {
         body: JSON.stringify({ professional_email: email })
       });
 
-      const data = await res.json();
+      const textData = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(textData);
+      } catch (err) {
+        data = { detail: `Server error (${res.status}): ${textData.substring(0, 50)}...` };
+      }
+      
       if (res.ok) {
         setStatus(`SUCCESS: ${data.message}`);
         setEmail('');
       } else {
-        setStatus(`ERROR: ${data.detail}`);
+        setStatus(`ERROR: ${data.detail || 'Unknown error'}`);
       }
     } catch (err) {
       setStatus("ERROR: Neural Link Failed");

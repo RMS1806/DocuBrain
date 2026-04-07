@@ -31,7 +31,8 @@ genai.configure(api_key=_GEMINI_API_KEY)
 EMBED_MODEL = "models/gemini-embedding-001"   # Updated to current active model
 CHAT_MODEL  = "gemini-2.5-flash"
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
-CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+_chroma_port_env = os.getenv("CHROMA_PORT", "8000")
+CHROMA_PORT = int(_chroma_port_env) if _chroma_port_env and _chroma_port_env.lstrip("-").isdigit() else 8000
 COLLECTION  = "docubrain_collection"
 
 # Text chunking parameters for vectorisation

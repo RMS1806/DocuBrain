@@ -48,7 +48,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 # ── Redis cache client (DB 1 — separate from Celery broker on DB 0) ───────────
-_REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL") or os.getenv("REDIS_URL") or "redis://redis:6379/1"
+_RAW_CACHE_URL = os.getenv("REDIS_CACHE_URL") or os.getenv("REDIS_URL") or "redis://redis:6379/1"
+if "REDIS_URL" in os.environ and "REDIS_CACHE_URL" not in os.environ:
+    if not any(_RAW_CACHE_URL.endswith(f"/{i}") for i in range(16)):
+        _RAW_CACHE_URL = f"{_RAW_CACHE_URL.rstrip('/')}/1"
+_REDIS_CACHE_URL = _RAW_CACHE_URL
+
 _redis: Optional[aioredis.Redis] = None
 
 
@@ -173,7 +178,7 @@ async def upload_document(
         )
 
     file_uuid  = str(uuid.uuid4())
-    safe_filename = file.filename.replace(' ', '_').replace('/', '')
+    safe_filename = os.path.basename(file.filename).replace(' ', '_')
     local_path = os.path.join(UPLOAD_DIR, f"{file_uuid}_{safe_filename}")
     file_content = await file.read()
 

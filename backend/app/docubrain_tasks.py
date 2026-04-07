@@ -30,7 +30,10 @@ from app import models, rag
 logger = get_task_logger(__name__)
 
 # ── Celery app ─────────────────────────────────────────────────────────────────
-REDIS_URL = os.getenv("REDIS_URL") or "redis://redis:6379/0"
+REDIS_URL = os.getenv("CELERY_BROKER_URL") or os.getenv("REDIS_URL") or "redis://redis:6379/0"
+if "REDIS_URL" in os.environ and "CELERY_BROKER_URL" not in os.environ:
+    if not any(REDIS_URL.endswith(f"/{i}") for i in range(16)):
+        REDIS_URL = f"{REDIS_URL.rstrip('/')}/0"
 
 celery_app = Celery(
     "docubrain_tasks",
