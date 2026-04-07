@@ -17,11 +17,11 @@ set -e
 APP_PORT="${PORT:-8000}"
 
 echo "🔥 Booting Neural Worker (Celery)..."
-celery -A app.docubrain_tasks worker --loglevel=info &
+celery -A app.docubrain_tasks worker --loglevel=info --concurrency=1 &
 
 echo "🚀 Starting DocuBrain backend on port ${APP_PORT}..."
 
 exec uvicorn app.main:app \
     --host 0.0.0.0 \
     --port "${APP_PORT}" \
-    --workers 2
+    --workers 1
