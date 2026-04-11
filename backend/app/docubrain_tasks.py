@@ -85,15 +85,16 @@ def process_document_task(self, doc_id: int):
         doc.status = "processing"
         db.commit()
 
-        # 3. Read PDF from Secure Local Storage
-        logger.info("⬇️ Reading %s from Local Disk…", doc.minio_path)
+        # 3. Read PDF from AWS S3 Secure Storage
+        logger.info("⬇️ Downloading %s from AWS S3 to memory…", doc.minio_path)
         
-        file_path = doc.minio_path
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Missing file payload at {file_path}")
-            
-        with open(file_path, "rb") as f:
-            pdf_data = f.read()
+        from app.s3_client import get_s3_client, download_bytes_from_s3
+        s3_bucket = os.getenv("S3_BUCKET_NAME", "docubrain-uploads-1806")
+        
+        try:
+            pdf_data = download_bytes_from_s3(get_s3_client(), s3_bucket, doc.minio_path)
+        except Exception as s3_exc:
+            raise FileNotFoundError(f"Missing file payload for {doc.minio_path} in S3: {s3_exc}")
 
         # 4. Extract text
         logger.info("📖 Extracting text from PDF…")

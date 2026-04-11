@@ -42,9 +42,8 @@ from app.chat_router import router as chat_router
 
 logger = logging.getLogger(__name__)
 
-# ── Secure Local Storage Configuration ─────────────────────────────────────────
-UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# ── S3 Configuration ─────────────────────────────────────────
+from app.s3_client import get_s3_client, upload_bytes_to_s3, delete_from_s3
 
 
 # ── Redis cache client (DB 0 — same as Celery broker due to PaaS limits) ───────────
@@ -179,18 +178,19 @@ async def upload_document(
 
     file_uuid  = str(uuid.uuid4())
     safe_filename = os.path.basename(file.filename).replace(' ', '_')
-    local_path = os.path.join(UPLOAD_DIR, f"{file_uuid}_{safe_filename}")
+    s3_object_key = f"{file_uuid}_{safe_filename}"
     file_content = await file.read()
 
-    # Upload to Local disk in a thread — never block the event loop with sync I/O
+    # Upload to AWS S3 in a thread — never block the event loop with sync I/O
+    s3_bucket = os.getenv("S3_BUCKET_NAME", "docubrain-uploads-1806")
     await anyio.to_thread.run_sync(
-        lambda: open(local_path, "wb").write(file_content)
+        lambda: upload_bytes_to_s3(get_s3_client(), s3_bucket, s3_object_key, file_content, real_file_type)
     )
 
     # Save document record
     new_doc = models.Document(
         filename=file.filename,
-        minio_path=local_path, # Repurposing to store the secure local path
+        minio_path=s3_object_key, # Storing the S3 Object Key
         content_type=real_file_type,
         file_size=len(file_content),
         user_id=current_user.id,
@@ -383,11 +383,11 @@ async def delete_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Delete from Disk (sync SDK → thread executor)
+    # Delete from AWS S3 (sync SDK → thread executor)
+    s3_bucket = os.getenv("S3_BUCKET_NAME", "docubrain-uploads-1806")
     try:
         def _del_file():
-            if os.path.exists(doc.minio_path):
-                os.remove(doc.minio_path)
+            delete_from_s3(get_s3_client(), s3_bucket, doc.minio_path)
         await anyio.to_thread.run_sync(_del_file)
     except Exception as exc:
         logger.warning("⚠️ Disk delete warning: %s", exc)
