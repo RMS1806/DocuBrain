@@ -19,11 +19,11 @@ When asked **"What is your stack?"**, here is your answer:
 ## 🌊 2. Core Workflows & Data Flows
 Here are the exact pathways data takes through the system during primary user actions.
 
-### Flow A: The Document Upload & AI AI-Embedding Flow 
+### Flow A: The Document Upload & AI Embedding Flow 
 *(This is the most complex flow and shows your advanced engineering skills!)*
 
 1. **Upload Request:** The React frontend sends a binary PDF file via `multipart/form-data` to the FastAPI backend (`POST /upload/`).
-2. **Local Storage & DB Pending:** FastAPI securely saves the PDF to an ephemeral local disk (`/uploads`) to prevent RAM bloat. It inserts a record into PostgreSQL with `status="pending"`. 
+2. **Cloud Storage & DB Pending:** FastAPI pipes the PDF streams directly into your **AWS S3 Bucket** to prevent RAM bloat and ensures horizontal container scaling. It inserts a record into PostgreSQL with `status="pending"`. 
 3. **Task Handoff (Redis):** Because processing AI takes time (10-30 seconds), if the API waited, the browser would timeout. Instead, FastAPI sends a message to **Redis** (acting as a Message Broker) and immediately returns a `200 OK` to the frontend.
 4. **Celery Worker Execution:**
    - The Celery Background Worker (running simultaneously alongside FastAPI) constantly listens to Redis. It grabs the task.
