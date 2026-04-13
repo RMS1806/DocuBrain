@@ -86,6 +86,7 @@ def get_gemini_embeddings_sync(texts: List[str]) -> List[List[float]]:
             model=EMBED_MODEL,
             content=text,
             task_type="retrieval_document",
+            output_dimensionality=768
         )
         embeddings.append(result["embedding"])
     return embeddings
