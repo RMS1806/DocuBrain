@@ -22,7 +22,7 @@ minio                               # S3-compatible client (MinIO / AWS S3)
 # ── AI / RAG Pipeline ────────────────────────────────────────────────────────
 google-generativeai                 # Gemini Embeddings + GenAI SDK
 langchain-google-genai              # LangChain ↔ Gemini chat integration
-pinecone-client                     # Vector database client
+pinecone                            # Vector database client
 
 # ── PDF Processing ────────────────────────────────────────────────────────────
 pypdf                               # PDF text extraction (lightweight)
