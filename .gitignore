@@ -12,3 +12,24 @@ env/
 # Node
 node_modules/
 dist/
+
+# Local upload/data directories (never commit test files or vector data)
+backend/uploaded_files/
+backend/uploads/
+backend/chroma_db/
+*.pdf
+
+# k6 result dumps (can be large — keep locally, not in git)
+k6/results/*.json
+
+# Terraform — state contains plaintext secrets, tfvars contains credentials
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars    # use terraform.tfvars.example as the template
+# Local editor/tooling config
+.claude/
+
+# Keep the generated interview/architecture guide (overrides *.pdf above)
+!docs/*.pdf

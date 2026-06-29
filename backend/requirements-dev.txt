@@ -1,0 +1,5 @@
+# Test and development dependencies — never installed in production Docker image
+pytest==8.2.2
+pytest-asyncio==0.23.8   # async test functions and fixtures
+httpx==0.27.0            # async HTTP client for testing FastAPI (replaces TestClient)
+ruff==0.4.10             # linter + formatter (mirrors CI lint job exactly)

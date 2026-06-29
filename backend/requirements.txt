@@ -11,6 +11,7 @@ python-multipart                    # Required for FastAPI UploadFile
 sqlalchemy                          # ORM (async + sync engines)
 asyncpg                             # Async Postgres driver (FastAPI)
 psycopg2-binary                     # Sync Postgres driver (Celery worker)
+alembic                             # Database schema migrations
 
 # ── Caching & Task Queue ─────────────────────────────────────────────────────
 redis                               # App-level cache + Celery broker
@@ -36,6 +37,9 @@ python-magic                        # MIME type detection (file upload security)
 # ── Validation ────────────────────────────────────────────────────────────────
 email-validator                     # Pydantic EmailStr support
 pydantic                            # Already a FastAPI dep, pinned for clarity
+
+# ── Observability ─────────────────────────────────────────────────────────────
+prometheus-client                   # Exposes /metrics in Prometheus text format
 
 # ── Async ─────────────────────────────────────────────────────────────────────
 anyio                               # Thread executor for sync SDKs

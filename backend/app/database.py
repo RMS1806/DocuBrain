@@ -12,7 +12,6 @@ Enterprise-grade async SQLAlchemy 2.0 setup — hardened for cloud deployment.
 
 import asyncio
 import logging
-import os
 import ssl
 
 import asyncpg
@@ -24,14 +23,11 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
-# ── Connection URLs ────────────────────────────────────────────────────────────
-# FastAPI (async): asyncpg driver.
-# Celery worker (sync): psycopg2 driver — imported via SYNC_DATABASE_URL or by
-# stripping the +asyncpg suffix so one env var can serve both.
-
-_RAW_DB_URL: str = os.getenv("DATABASE_URL", "")
+_RAW_DB_URL: str = settings.DATABASE_URL
 
 if not _RAW_DB_URL:
     raise RuntimeError("CRITICAL ERROR: DATABASE_URL environment variable is missing.")
@@ -50,9 +46,8 @@ ASYNC_DATABASE_URL: str = _RAW_DB_URL.replace(
 ).replace("postgresql+psycopg2://", "postgresql+asyncpg://")
 
 # Celery workers use the plain psycopg2 URL (separate env var or derived).
-SYNC_DATABASE_URL: str = os.getenv(
-    "SYNC_DATABASE_URL",
-    _RAW_DB_URL.replace("postgresql+asyncpg://", "postgresql://"),
+SYNC_DATABASE_URL: str = settings.SYNC_DATABASE_URL or _RAW_DB_URL.replace(
+    "postgresql+asyncpg://", "postgresql://"
 )
 
 # ── FIX 2: SSL Context ────────────────────────────────────────────────────────
@@ -61,7 +56,7 @@ SYNC_DATABASE_URL: str = os.getenv(
 # OSError: [Errno 101] Network is unreachable.
 #
 # We detect "is this a cloud URL?" by checking if the host is NOT a local alias.
-_LOCAL_HOSTS = {"localhost", "127.0.0.1", "db", "postgres", "host.docker.internal"}
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "db", "postgres", "host.docker.internal", "pgbouncer"}
 _parsed_host = _RAW_DB_URL.split("@")[-1].split("/")[0].split(":")[0].lower()
 _is_cloud = _parsed_host not in _LOCAL_HOSTS
 
@@ -73,14 +68,26 @@ if _is_cloud:
     _ssl_context.check_hostname = False
     _ssl_context.verify_mode = ssl.CERT_NONE
 
-    _async_connect_args = {"ssl": _ssl_context}
+    _async_connect_args = {
+        "ssl": _ssl_context,
+        # PgBouncer (transaction mode) routes each transaction to a potentially
+        # different real Postgres connection. asyncpg's prepared-statement cache
+        # is per-connection, so a statement prepared on connection A doesn't exist
+        # on connection B. Setting statement_cache_size=0 disables the cache and
+        # prevents "prepared statement does not exist" errors.
+        "statement_cache_size": 0,
+    }
     _sync_connect_args = {
         "sslmode": "require",
         "connect_timeout": 15,
     }
 else:
     logger.info("🏠 Local host detected (%s) — SSL disabled.", _parsed_host)
-    _async_connect_args = {}
+    _async_connect_args = {
+        # Disable prepared-statement cache even locally so dev behaviour matches
+        # production (where PgBouncer is always in front of Postgres).
+        "statement_cache_size": 0,
+    }
     _sync_connect_args = {"connect_timeout": 10}
 
 
@@ -105,6 +112,55 @@ AsyncSessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
     expire_on_commit=False,   # Avoids lazy-load errors after commit in async ctx
+)
+
+# ── Read Replica Engine ────────────────────────────────────────────────────────
+# If READ_REPLICA_URL is set, heavy read-only queries (analytics, progress stats)
+# are routed here — freeing the primary for writes.
+#
+# If not set (dev, free-tier, single-server), _REPLICA_URL falls back to the
+# primary URL. replica_engine becomes the same logical target as async_engine.
+# No app code needs to change — get_read_db() just works in both cases.
+#
+# Replication lag note: replica reads may be a few milliseconds behind the primary.
+# Only route queries here where slight staleness is acceptable (aggregate stats,
+# historical data). Queries that immediately follow a write (e.g. list documents
+# after upload) must stay on the primary via get_db().
+
+_raw_replica_url: str = settings.READ_REPLICA_URL or settings.DATABASE_URL
+
+# Normalise scheme: same logic as the primary URL above.
+if _raw_replica_url.startswith("postgres://"):
+    _raw_replica_url = _raw_replica_url.replace("postgres://", "postgresql://", 1)
+
+ASYNC_REPLICA_URL: str = _raw_replica_url.replace(
+    "postgresql://", "postgresql+asyncpg://"
+).replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+
+_using_replica = (ASYNC_REPLICA_URL != ASYNC_DATABASE_URL)
+logger.info(
+    "Read replica: %s",
+    "enabled (" + ASYNC_REPLICA_URL.split("@")[-1].split("/")[0] + ")"
+    if _using_replica else "disabled (falling back to primary)",
+)
+
+replica_engine = create_async_engine(
+    ASYNC_REPLICA_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=300,
+    pool_timeout=30,
+    echo=False,
+    connect_args=_async_connect_args,
+)
+
+ReplicaSessionLocal = async_sessionmaker(
+    bind=replica_engine,
+    class_=AsyncSession,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
 )
 
 # ── Sync Engine (Celery Workers Only) ─────────────────────────────────────────
@@ -196,14 +252,31 @@ async def wait_for_db(max_retries: int = 12, initial_delay: float = 2.0) -> None
             delay = min(delay * 2, 30)  # Cap backoff at 30 s
 
 
-# ── FastAPI Async Session Dependency ──────────────────────────────────────────
+# ── FastAPI Async Session Dependencies ────────────────────────────────────────
+
 async def get_db() -> AsyncSession:
     """
-    FastAPI dependency that yields a single AsyncSession per request.
-    The session is automatically closed (and the connection returned to the
-    pool) when the request finishes — even if an exception is raised.
+    Primary DB session — use for ALL writes and any read that must see the
+    latest committed data (e.g. listing documents immediately after upload).
     """
     async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+
+
+async def get_read_db() -> AsyncSession:
+    """
+    Read-replica session — use for read-only endpoints where a few milliseconds
+    of replication lag is acceptable: analytics dashboards, progress stats,
+    historical aggregates.
+
+    Falls back to the primary automatically if READ_REPLICA_URL is not set,
+    so this dependency is safe to use in all environments without extra config.
+    """
+    async with ReplicaSessionLocal() as session:
         try:
             yield session
         except Exception:

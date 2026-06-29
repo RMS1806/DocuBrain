@@ -2,31 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #050505;
-  color: #ffffff;
-  overflow-x: hidden;
-  /* 🔴 HIDE DEFAULT CURSOR so the custom one takes over */
-  cursor: none; 
-  font-family: 'Inter', sans-serif;
-}
+* { box-sizing: border-box; }
 
-/* Ensure links and buttons also don't show the system cursor */
-a, button, input, select, textarea {
+/* ── Warm earthy background ───────────────────────────────────────────────── */
+body {
+  min-height: 100vh;
+  background-color: #FAF7F0;
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      transparent              0px,
+      transparent              80px,
+      rgba(193,112,90,0.10)   80px,
+      rgba(193,112,90,0.10)  100px
+    );
+  color: #2C1A10;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
   cursor: none;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+a, button, input, select, textarea, label { cursor: none; }
+
+/* ── Glass utility ─────────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 252, 248, 0.68);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 248, 240, 0.88);
+  box-shadow:
+    0 4px 24px rgba(181, 71, 54, 0.10),
+    0 1px 3px  rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
-::-webkit-scrollbar-track {
-  background: #0a0a0a;
+
+.glass-hover:hover {
+  background: rgba(255, 252, 248, 0.82);
+  border-color: rgba(255, 248, 240, 0.95);
 }
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+
+/* ── Gradient text ─────────────────────────────────────────────────────────── */
+.grad-text {
+  background: linear-gradient(135deg, #b54736, #7a8433);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #00f3ff;
-}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(181,71,54,0.30); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #b54736; }
+
+/* ── Flashcard flip ────────────────────────────────────────────────────────── */
+.flip-card { perspective: 1000px; }
+.flip-card-inner { transition: transform 0.55s cubic-bezier(0.4,0,0.2,1); transform-style: preserve-3d; }
+.flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+.flip-card-front, .flip-card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip-card-back { transform: rotateY(180deg); }
+
+/* ── Selection ─────────────────────────────────────────────────────────────── */
+::selection { background: #f4cfc5; color: #2C1A10; }
+
+/* ── Smooth transitions ────────────────────────────────────────────────────── */
+* { transition-property: color, background-color, border-color, box-shadow, opacity; transition-duration: 150ms; }

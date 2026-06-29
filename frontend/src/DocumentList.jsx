@@ -1,119 +1,170 @@
-import { motion } from 'framer-motion';
-import { FileText, CheckCircle, Clock, Loader2, Database, Trash2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, CheckCircle2, Clock, Loader2, Trash2, Upload, AlertCircle } from 'lucide-react';
 import { API_BASE } from './api';
 
-const DocumentList = ({ documents, isLoading, onDelete }) => {
+const getToken = () => localStorage.getItem('token');
 
-  const handleDelete = async (docId, filename) => {
-    if (!confirm(`Are you sure you want to PERMANENTLY delete "${filename}"? This cannot be undone.`)) {
-      return;
-    }
+const STATUS_CONFIG = {
+  ready:      { label: 'Ready',      bg: 'bg-olive-50',       border: 'border-olive-300',      text: 'text-olive-800',      dot: 'bg-olive-500' },
+  processing: { label: 'Processing', bg: 'bg-mustard-50',     border: 'border-mustard-300',    text: 'text-mustard-800',    dot: 'bg-mustard-500 animate-pulse' },
+  pending:    { label: 'Pending',    bg: 'bg-terracotta-50',  border: 'border-terracotta-200', text: 'text-terracotta-700', dot: 'bg-terracotta-300' },
+  failed:     { label: 'Failed',     bg: 'bg-red-50',         border: 'border-red-300',        text: 'text-red-700',        dot: 'bg-red-500' },
+};
 
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/documents/${docId}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-
-      if (res.ok) {
-        // Trigger a refresh in the parent component
-        if (onDelete) onDelete();
-      } else {
-        alert("Failed to delete document");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error connecting to server");
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="w-full flex flex-col items-center justify-center py-12 gap-4">
-        <Loader2 className="w-8 h-8 text-neon-blue animate-spin" />
-        <span className="text-zinc-500 font-mono text-xs animate-pulse">ACCESSING NEURAL ARCHIVE...</span>
-      </div>
-    );
-  }
-
-  if (documents.length === 0) {
-    return (
-      <div className="text-center py-12 border border-dashed border-zinc-800 rounded-xl mt-8 bg-zinc-900/20">
-        <Database className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-        <p className="text-zinc-500 font-mono text-sm">NO DATA ARTIFACTS FOUND</p>
-      </div>
-    );
-  }
-
+const StatusBadge = ({ status }) => {
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
   return (
-    <div className="w-full max-w-4xl mt-12 mb-20">
-      <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-2">
-        <Database className="w-5 h-5 text-neon-blue" />
-        <h3 className="text-lg font-bold tracking-wider text-white">YOUR DATA VAULT</h3>
-        <span className="ml-auto text-xs font-mono text-zinc-500">{documents.length} FILES SECURED</span>
-      </div>
-
-      <div className="grid gap-3">
-        {documents.map((doc, index) => (
-          <motion.div
-            key={doc.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="group relative bg-zinc-900/40 border border-white/5 hover:border-neon-blue/50 rounded-lg p-4 transition-all duration-300 hover:bg-zinc-900/80 flex items-center justify-between"
-          >
-
-            {/* File Info */}
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-zinc-800 rounded-lg group-hover:bg-neon-blue/10 transition-colors">
-                <FileText className="w-6 h-6 text-zinc-400 group-hover:text-neon-blue" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm tracking-wide text-zinc-200 group-hover:text-white">
-                  {doc.filename}
-                </h4>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs font-mono text-zinc-500">
-                    {(doc.file_size / 1024).toFixed(1)} KB
-                  </span>
-                  <span className="text-zinc-700">|</span>
-                  <span className="text-xs font-mono text-zinc-500">
-                    {new Date(doc.upload_date).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Side Actions */}
-            <div className="flex items-center gap-4">
-              {/* Status Badge */}
-              <div className={`px-3 py-1 rounded-full border flex items-center gap-2 text-xs font-bold tracking-wider ${doc.status === 'completed'
-                ? 'bg-green-500/10 border-green-500/20 text-green-400'
-                : doc.status === 'processing'
-                  ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 animate-pulse'
-                  : 'bg-zinc-800 border-zinc-700 text-zinc-500'
-                }`}>
-                {doc.status === 'completed' && <CheckCircle className="w-3 h-3" />}
-                {doc.status === 'processing' && <Loader2 className="w-3 h-3 animate-spin" />}
-                {doc.status === 'pending' && <Clock className="w-3 h-3" />}
-                {doc.status.toUpperCase()}
-              </div>
-
-              {/* Delete Button (Only appears on hover) */}
-              <button
-                onClick={() => handleDelete(doc.id, doc.filename)}
-                className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                title="Purge File"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
   );
 };
 
-export default DocumentList;
+export default function DocumentList({ documents, isLoading, onDelete, onUpload }) {
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting]   = useState(null);
+  const [error, setError]         = useState('');
+  const [dragOver, setDragOver]   = useState(false);
+  const inputRef = useRef();
+
+  const uploadFile = async (file) => {
+    if (!file) return;
+    if (file.type !== 'application/pdf') { setError('Only PDF files are accepted'); return; }
+    setError('');
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch(`${API_BASE}/upload/`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body,
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.detail ?? 'Upload failed');
+      } else {
+        onUpload?.();
+      }
+    } catch {
+      setError('Upload failed — check connection');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    uploadFile(e.dataTransfer.files?.[0]);
+  };
+
+  const handleDelete = async (id) => {
+    setDeleting(id);
+    try {
+      await fetch(`${API_BASE}/documents/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      onDelete?.();
+    } catch { /* ignore */ }
+    finally { setDeleting(null); }
+  };
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h2 className="text-xl font-black text-terracotta-950">Documents</h2>
+        <p className="text-terracotta-700 text-sm mt-0.5 font-medium">Upload PDFs to study with AI</p>
+      </div>
+
+      {/* Upload zone */}
+      <div
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
+        className={`relative rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer transition-all border-2 border-dashed ${
+          dragOver
+            ? 'bg-terracotta-50 border-terracotta-400'
+            : 'glass border-terracotta-200/60 hover:border-terracotta-300'
+        }`}>
+        <input ref={inputRef} type="file" accept=".pdf" className="hidden"
+          onChange={e => uploadFile(e.target.files?.[0])} />
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+          dragOver ? 'bg-terracotta-100' : 'bg-white/70'
+        }`}>
+          {uploading
+            ? <Loader2 className="w-6 h-6 text-terracotta-500 animate-spin" />
+            : <Upload className={`w-6 h-6 ${dragOver ? 'text-terracotta-600' : 'text-terracotta-400'}`} />
+          }
+        </div>
+        <div className="text-center">
+          <p className={`text-sm font-bold ${dragOver ? 'text-terracotta-800' : 'text-terracotta-700'}`}>
+            {uploading ? 'Uploading…' : dragOver ? 'Drop to upload' : 'Drop a PDF here or click to browse'}
+          </p>
+          <p className="text-xs text-terracotta-500 mt-1 font-medium">PDF only · Max 20 MB</p>
+        </div>
+        {error && (
+          <div className="flex items-center gap-2 text-red-700 text-xs bg-red-50 border border-red-200 rounded-xl px-3 py-2 font-semibold">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
+          </div>
+        )}
+      </div>
+
+      {/* Document list */}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-32 gap-2">
+          <Loader2 className="w-5 h-5 text-terracotta-500 animate-spin" />
+          <span className="text-terracotta-700 text-sm font-semibold">Loading documents…</span>
+        </div>
+      ) : documents.length === 0 ? (
+        <div className="glass rounded-2xl p-12 flex flex-col items-center gap-3 text-center border-2 border-dashed border-terracotta-200/60">
+          <div className="w-12 h-12 rounded-xl bg-white/70 flex items-center justify-center">
+            <FileText className="w-6 h-6 text-terracotta-400" />
+          </div>
+          <div>
+            <p className="text-terracotta-800 text-sm font-bold">No documents yet</p>
+            <p className="text-terracotta-600 text-xs mt-1 font-medium">Upload a PDF to get started</p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-terracotta-700 uppercase tracking-wider">
+            {documents.length} document{documents.length !== 1 ? 's' : ''}
+          </p>
+          <AnimatePresence>
+            {documents.map((doc, i) => (
+              <motion.div key={doc.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.04 }}
+                className="glass glass-hover rounded-xl px-4 py-3.5 flex items-center gap-4 group transition-all">
+                <div className="w-9 h-9 rounded-lg bg-terracotta-50 flex items-center justify-center shrink-0 border border-terracotta-200">
+                  <FileText className="w-4 h-4 text-terracotta-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-terracotta-950 truncate">{doc.filename}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <StatusBadge status={doc.status} />
+                    <span className="text-[11px] text-terracotta-600 flex items-center gap-1 font-medium">
+                      <Clock className="w-3 h-3" />
+                      {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ''}
+                    </span>
+                  </div>
+                </div>
+                {doc.status === 'ready' && <CheckCircle2 className="w-4 h-4 text-olive-600 shrink-0" />}
+                <button
+                  onClick={() => handleDelete(doc.id)}
+                  disabled={deleting === doc.id}
+                  className="p-1.5 rounded-lg text-terracotta-300 hover:text-red-600 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50">
+                  {deleting === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
+  );
+}

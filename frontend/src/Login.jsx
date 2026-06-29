@@ -1,217 +1,136 @@
-import { useState, useEffect } from 'react';
-import { motion, useMotionValue } from 'framer-motion'; // Added useMotionValue
-import { Brain, Lock, User, AlertCircle, ChevronRight, Briefcase } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Mail, Lock, Loader2, Layers, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE } from './api';
 
-// --- ADDED CURSOR COMPONENT ---
-const CustomCursor = () => {
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  const [isHovering, setIsHovering] = useState(false);
-
-  useEffect(() => {
-    const moveCursor = (e) => {
-      cursorX.set(e.clientX - 16);
-      cursorY.set(e.clientY - 16);
-    };
-    const handleMouseOver = (e) => {
-      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'INPUT' || e.target.closest('button')) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
-    };
-    window.addEventListener('mousemove', moveCursor);
-    window.addEventListener('mouseover', handleMouseOver);
-    return () => {
-      window.removeEventListener('mousemove', moveCursor);
-      window.removeEventListener('mouseover', handleMouseOver);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <motion.div
-      className="fixed top-0 left-0 pointer-events-none z-[9999] mix-blend-difference"
-      style={{ translateX: cursorX, translateY: cursorY }}
-    >
-      <motion.div
-        animate={{ scale: isHovering ? 1.5 : 1, opacity: isHovering ? 1 : 0.5 }}
-        className="w-8 h-8 rounded-full border-2 border-neon-blue transition-colors duration-200"
-      />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full" />
-    </motion.div>
-  );
-};
-
-const Login = () => {
-  // ... (Keep all your existing state and logic exactly as is) ...
-  const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState('client');
-  const [email, setEmail] = useState('');
+export default function Login() {
+  const [mode, setMode]         = useState('login');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
   const navigate = useNavigate();
+
+  const extractError = (detail, fallback) => {
+    if (!detail) return fallback;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) return detail.map(e => e.msg ?? String(e)).join(' · ');
+    return fallback;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      const endpoint = isLogin ? "/auth/login" : "/auth/register";
-      const url = `${API_BASE}${endpoint}`;
-
-      let options = {};
-
-      if (isLogin) {
-        // Login uses FormData (OAuth2 Standard)
-        const formData = new FormData();
-        formData.append('username', email); // Note: Backend expects 'username', we send email
-        formData.append('password', password);
-        options = { method: "POST", body: formData };
+      if (mode === 'register') {
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { setError(extractError(data.detail, 'Registration failed')); return; }
+        localStorage.setItem('token', data.access_token);
+        navigate('/dashboard');
       } else {
-        // Register uses JSON
-        options = {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email,
-            password: password,
-            role: role
-          }),
-        };
+        const form = new FormData();
+        form.append('username', email);
+        form.append('password', password);
+        const res = await fetch(`${API_BASE}/auth/login`, { method: 'POST', body: form });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { setError(extractError(data.detail, 'Invalid credentials')); return; }
+        localStorage.setItem('token', data.access_token);
+        navigate('/dashboard');
       }
-
-      const response = await fetch(url, options);
-      const data = await response.json();
-
-      if (!response.ok) {
-        // --- 🔴 FIX: Handle Object Errors (422 Validation) ---
-        let errorMessage = "Authentication Failed";
-
-        if (data.detail) {
-          if (typeof data.detail === 'string') {
-            // Simple error string
-            errorMessage = data.detail;
-          } else if (Array.isArray(data.detail)) {
-            // FastAPI Validation array (e.g. invalid email format)
-            // We grab the first error message from the list
-            errorMessage = `${data.detail[0].loc[1]}: ${data.detail[0].msg}`;
-          } else {
-            errorMessage = JSON.stringify(data.detail);
-          }
-        }
-        throw new Error(errorMessage);
-        // -----------------------------------------------------
-      }
-
-      // Success!
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('role', data.role);
-      navigate('/dashboard');
-
-    } catch (err) {
-      // ── Detailed error logging for debugging production issues ──
-      console.error('[DocuBrain Auth Error]', {
-        message: err.message,
-        name: err.name,
-        url: `${API_BASE}${isLogin ? '/auth/login' : '/auth/register'}`,
-        // "Failed to fetch" = network/CORS block; otherwise it's an HTTP error
-        likelyCause: err.message === 'Failed to fetch'
-          ? 'CORS block or network unreachable — check browser Network tab'
-          : 'Server returned an error — see message above',
-      });
-      setError(err.message === 'Failed to fetch'
-        ? 'Cannot reach server. Please check your connection or try again later.'
-        : err.message);
+    } catch {
+      setError('Connection failed. Is the server running?');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 font-sans relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute w-[600px] h-[600px] rounded-full bg-terracotta-200 blur-[130px] opacity-50 -top-48 -left-32" />
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-mustard-100   blur-[120px] opacity-55 -bottom-32 right-0" />
+        <div className="absolute w-[300px] h-[300px] rounded-full bg-olive-200    blur-[100px] opacity-35 top-1/2 left-1/2 -translate-x-1/2" />
+      </div>
 
-      {/* 🔴 INSERT CURSOR HERE */}
-      <CustomCursor />
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+        className="relative w-full max-w-sm z-10">
 
-      {/* Background Ambience */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,243,255,0.1),transparent_70%)]" />
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-30" />
-
-      {/* Login Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-zinc-900/80 border border-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl relative z-10"
-      >
-        {/* ... (Rest of your existing Login JSX) ... */}
+        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="p-4 bg-zinc-800/50 rounded-full mb-4 border border-neon-blue/20 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
-            <Brain className="w-8 h-8 text-neon-blue" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-terracotta-600 to-olive-600 flex items-center justify-center shadow-xl shadow-terracotta-200 mb-4">
+            <Layers className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tighter text-white mb-1">DOCU<span className="text-neon-blue">BRAIN</span></h1>
-          <p className="text-zinc-500 text-xs font-mono tracking-widest">SECURE NEURAL ACCESS</p>
+          <h1 className="text-2xl font-black text-terracotta-950">Docu<span className="grad-text">Brain</span></h1>
+          <p className="text-terracotta-700 text-sm mt-1 font-medium">AI Study Workspace</p>
         </div>
 
-        {!isLogin && (
-          <div className="flex bg-zinc-950 p-1 rounded-lg mb-6 border border-white/5">
-            <button type="button" onClick={() => setRole('client')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${role === 'client' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}>
-              <User className="w-3 h-3" /> Client
-            </button>
-            <button type="button" onClick={() => setRole('professional')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${role === 'professional' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}>
-              <Briefcase className="w-3 h-3" /> Professional
-            </button>
+        {/* Glass card */}
+        <div className="glass rounded-2xl p-8">
+          {/* Mode toggle */}
+          <div className="flex bg-terracotta-50 rounded-xl p-1 mb-6 gap-1">
+            {[['login','Sign In'], ['register','Register']].map(([m, label]) => (
+              <button key={m} onClick={() => { setMode(m); setError(''); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                  mode === m
+                    ? 'bg-white text-terracotta-800 shadow-sm'
+                    : 'text-terracotta-600 hover:text-terracotta-900'
+                }`}>
+                {label}
+              </button>
+            ))}
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-mono text-zinc-500 ml-1">IDENTITY_STRING (EMAIL)</label>
-            <div className="relative">
-              <User className="absolute left-3 top-3.5 w-4 h-4 text-zinc-600" />
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/50 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-neon-blue transition-colors text-sm" placeholder="user@neural.net" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-terracotta-800 uppercase tracking-wider mb-1.5">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-terracotta-400" />
+                <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com" autoComplete="email"
+                  className="w-full bg-white/90 border border-terracotta-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-terracotta-950 placeholder:text-terracotta-300 font-medium
+                    focus:outline-none focus:border-terracotta-500 focus:ring-2 focus:ring-terracotta-100 transition-all" />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-mono text-zinc-500 ml-1">SECURITY_KEY (PASSWORD)</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3.5 w-4 h-4 text-zinc-600" />
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black/50 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-neon-blue transition-colors text-sm" placeholder="••••••••" />
+            <div>
+              <label className="block text-xs font-bold text-terracotta-800 uppercase tracking-wider mb-1.5">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-2.5 w-4 h-4 text-terracotta-400" />
+                <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  className="w-full bg-white/90 border border-terracotta-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-terracotta-950 placeholder:text-terracotta-300 font-medium
+                    focus:outline-none focus:border-terracotta-500 focus:ring-2 focus:ring-terracotta-100 transition-all" />
+              </div>
             </div>
-          </div>
 
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-xs font-mono">
-              <AlertCircle className="w-4 h-4 shrink-0" /> <span className="truncate">{error}</span>
-            </motion.div>
-          )}
+            {error && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="text-red-700 text-xs bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 font-semibold">
+                {error}
+              </motion.p>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-neon-blue hover:bg-cyan-300 text-black font-bold py-3 rounded-xl transition-all duration-300 shadow-[0_0_10px_rgba(0,243,255,0.2)] hover:shadow-[0_0_20px_rgba(0,243,255,0.5)] flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? <span className="animate-pulse">PROCESSING...</span> : <>{isLogin ? 'INITIATE LINK' : 'CREATE IDENTITY'} <ChevronRight className="w-4 h-4" /></>}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-zinc-600 text-xs">
-            {isLogin ? "New to the network?" : "Already linked?"}
-            <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); }} className="text-neon-blue hover:underline font-bold ml-1">
-              {isLogin ? "Register Access" : "Login"}
+            <button type="submit" disabled={loading}
+              className="w-full mt-1 bg-terracotta-600 hover:bg-terracotta-700 disabled:bg-terracotta-300 text-white font-bold text-sm py-2.5 rounded-xl
+                flex items-center justify-center gap-2 transition-all shadow-md shadow-terracotta-200">
+              {loading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <>{mode === 'login' ? 'Sign In' : 'Create Account'}<ChevronRight className="w-4 h-4" /></>
+              }
             </button>
-          </p>
+          </form>
         </div>
+
+        <p className="text-center text-xs text-terracotta-700 font-semibold mt-5">Secure · Encrypted · AI-powered</p>
       </motion.div>
     </div>
   );
-};
-
-export default Login;
+}

@@ -18,6 +18,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-host=md5 --auth-local=md5"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -70,6 +72,70 @@ services:
 
 
   # ─────────────────────────────────────────
+  # 7. THE BOUNCER (Connection Pooler)
+  # ─────────────────────────────────────────
+  # edoburu/pgbouncer auto-generates pgbouncer.ini + userlist.txt from env vars.
+  # The backend connects to pgbouncer:5432 — NOT directly to db:5432.
+  # PgBouncer maintains a small pool of real Postgres connections and multiplexes
+  # all app connections onto them, keeping Postgres's connection count low.
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: docubrain_pgbouncer
+    restart: on-failure
+    ports:
+      - "5433:5432"     # Exposed as 5433 locally so you can still reach Postgres directly on 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 10
+      MIN_POOL_SIZE: 2
+      RESERVE_POOL_SIZE: 3
+      SERVER_IDLE_TIMEOUT: 600
+      QUERY_TIMEOUT: 30
+      LOG_CONNECTIONS: 1
+      LOG_DISCONNECTIONS: 1
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # ─────────────────────────────────────────
+  # 8. THE GATEKEEPER (Reverse Proxy)
+  # ─────────────────────────────────────────
+  # Nginx is the ONLY service that exposes ports to the host network.
+  # Everything else (backend, db, redis) is on Docker's internal network only.
+  # This is the correct security posture — only the reverse proxy is internet-facing.
+  nginx:
+    image: nginx:alpine
+    container_name: docubrain_nginx
+    restart: on-failure
+    ports:
+      - "80:80"
+      - "443:443"   # Unused in dev; ready for production TLS
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro   # :ro = read-only mount
+      # Uncomment for production TLS (after running certbot):
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t && wget -qO- http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ─────────────────────────────────────────
   # 1. THE BRAIN (API)
   # ─────────────────────────────────────────
   backend:
@@ -77,13 +143,13 @@ services:
       context: ./backend
     container_name: docubrain_backend
     restart: on-failure
-    ports:
-      - "8000:8000"
+    # No ports exposed to host — all traffic enters through Nginx.
+    # The backend is only reachable via Docker's internal network.
     volumes:
       - ./backend:/code
     # Only start AFTER every dependency is actually healthy
     depends_on:
-      db:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -91,13 +157,14 @@ services:
         condition: service_healthy
 
     environment:
-      # asyncpg driver required for SQLAlchemy 2.0 AsyncSession
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
-      # psycopg2 URL used internally by database.py for the sync engine (Celery compat)
-      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer/${POSTGRES_DB}
+      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer/${POSTGRES_DB}
+      READ_REPLICA_URL: ${READ_REPLICA_URL:-}
       REDIS_URL: redis://redis:6379/0
-      # DB index 1 is dedicated to app-level caching (separate from Celery broker)
       REDIS_CACHE_URL: redis://redis:6379/1
+      SECRET_KEY: ${SECRET_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       PINECONE_API_KEY: ${PINECONE_API_KEY}
       PINECONE_INDEX_NAME: ${PINECONE_INDEX_NAME}
@@ -106,7 +173,6 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-      FRONTEND_URL: ${FRONTEND_URL}
 
   # ─────────────────────────────────────────
   # 2. THE MUSCLE (Async Worker)
@@ -120,7 +186,7 @@ services:
     volumes:
       - ./backend:/code
     depends_on:
-      db:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -128,11 +194,12 @@ services:
         condition: service_healthy
 
     environment:
-      # Worker uses sync psycopg2 engine (no asyncpg)
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
-      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer/${POSTGRES_DB}
+      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       REDIS_CACHE_URL: redis://redis:6379/1
+      SECRET_KEY: ${SECRET_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       PINECONE_API_KEY: ${PINECONE_API_KEY}
       PINECONE_INDEX_NAME: ${PINECONE_INDEX_NAME}
@@ -159,7 +226,7 @@ services:
       - backend
     environment:
       WATCHPACK_POLLING: "true"
-      VITE_API_URL: http://localhost:8000
+      VITE_API_URL: http://localhost   # Traffic goes through Nginx on port 80
 
 # ─────────────────────────────────────────
 # PERSISTENT STORAGE VOLUMES

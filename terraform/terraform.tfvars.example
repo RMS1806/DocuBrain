@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# terraform.tfvars.example
+#
+# Copy this file to terraform.tfvars and fill in your values:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# NEVER commit terraform.tfvars to git — it contains secrets.
+# It is already in .gitignore.
+#
+# Run the infrastructure:
+#   terraform init      # download AWS provider plugin (~30s)
+#   terraform plan      # preview what will be created (no charges yet)
+#   terraform apply     # create everything (~2-3 minutes)
+#   terraform destroy   # delete everything (stops all charges)
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── AWS ───────────────────────────────────────────────────────────────────────
+aws_region  = "us-east-1"
+aws_profile = "default"   # run "aws configure" first
+
+# ── Project ───────────────────────────────────────────────────────────────────
+project_name = "docubrain"
+environment  = "production"
+
+# ── Networking ────────────────────────────────────────────────────────────────
+# Find your IP: curl https://checkip.amazonaws.com
+# Add /32 at the end: e.g. "203.0.113.42/32"
+allowed_ssh_cidr = "YOUR.PUBLIC.IP.ADDRESS/32"
+
+# ── EC2 ───────────────────────────────────────────────────────────────────────
+instance_type = "t3.small"
+
+# Ubuntu 22.04 LTS in us-east-1 (update if using a different region)
+# Find latest: aws ec2 describe-images --owners 099720109477 \
+#   --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64*' \
+#   --query 'sort_by(Images, &CreationDate)[-1].ImageId'
+ami_id = "ami-0c7217cdde317cfec"
+
+# Create in AWS Console → EC2 → Key Pairs → Create key pair
+# Download the .pem file and save to ~/.ssh/
+key_pair_name = "docubrain-key"
+
+# ── S3 ────────────────────────────────────────────────────────────────────────
+# Must be globally unique. Add your name/random suffix.
+s3_bucket_name = "docubrain-uploads-YOURNAME-2024"
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+# Generate SECRET_KEY: python -c "import secrets; print(secrets.token_hex(32))"
+secret_key        = "GENERATE_A_RANDOM_64_CHAR_HEX_STRING"
+postgres_password = "CHOOSE_A_STRONG_DATABASE_PASSWORD"
+gemini_api_key    = "YOUR_GEMINI_API_KEY_FROM_AI_STUDIO"
+pinecone_api_key  = "YOUR_PINECONE_API_KEY"
+pinecone_index_name = "docubrain-index"

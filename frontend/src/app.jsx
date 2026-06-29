@@ -1,41 +1,53 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { motion, useMotionValue } from 'framer-motion';
 import Login from './Login';
-import Dashboard from './Dashboard'; // Make sure you moved your old App.jsx code here!
+import Dashboard from './Dashboard';
 
-// --- GUARD COMPONENT ---
-// If no token exists in local storage, kick them back to Login
+const CustomCursor = () => {
+  const x = useMotionValue(-100);
+  const y = useMotionValue(-100);
+  const [hover, setHover] = useState(false);
+
+  useEffect(() => {
+    const move = e => { x.set(e.clientX - 16); y.set(e.clientY - 16); };
+    const over  = e => setHover(!!(e.target.closest('button,a,input,label,select,textarea')));
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseover', over);
+    return () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseover', over);
+    };
+  }, []);
+
+  return (
+    <motion.div className="fixed top-0 left-0 pointer-events-none z-[9999]" style={{ translateX: x, translateY: y }}>
+      <motion.div
+        animate={{ scale: hover ? 1.6 : 1 }}
+        transition={{ type: 'spring', stiffness: 350, damping: 20 }}
+        className="w-8 h-8 rounded-full border-2 border-terracotta-500"
+      />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-terracotta-600 rounded-full" />
+    </motion.div>
+  );
+};
+
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
-
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (!token) return <Navigate to="/login" replace />;
   return children;
 };
 
-// --- MAIN APP ROUTER ---
 function App() {
   return (
-    <Routes>
-      {/* 1. Login Route */}
-      <Route path="/login" element={<Login />} />
-
-      {/* 2. Protected Dashboard Route */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* 3. Default Redirect (Catch-all) */}
-      {/* If they go to "/" or a broken link, try sending them to dashboard */}
-      {/* The ProtectedRoute will then check if they need to login */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    <>
+      <CustomCursor />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </>
   );
 }
 

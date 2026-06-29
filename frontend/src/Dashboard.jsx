@@ -1,288 +1,236 @@
-import { useState, useEffect } from 'react';
-import { motion, useMotionValue } from 'framer-motion';
-import { Upload, FileText, Cpu, LogOut, User, MessageSquare, Database, Video, Globe } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FileText, MessageSquare, Brain, BarChart2, TrendingUp,
+  LogOut, Bell, X, CheckCircle2, ChevronRight, User, Layers,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE } from './api';
-import DocumentList from './DocumentList';
-import ChatInterface from './ChatInterface';
-import MeetingInterface from './MeetingInterface';
-import NetworkInterface from './NetworkInterface';
+import DocumentList  from './DocumentList';
+import ChatInterface  from './ChatInterface';
+import Analytics     from './Analytics';
+import Progress      from './Progress';
+import Quizzes       from './Quizzes';
 
-// --- VISUAL COMPONENTS (Backgrounds/Cursor) ---
-const ParticleBackground = () => {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(20)].map((_, i) => (
-        <motion.div key={i} className="absolute bg-neon-blue rounded-full opacity-20" initial={{ x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, scale: Math.random() * 0.5 + 0.5 }} animate={{ y: [null, Math.random() * -100], opacity: [0.2, 0] }} transition={{ duration: Math.random() * 5 + 5, repeat: Infinity, ease: "linear" }} style={{ width: Math.random() * 4 + 1 + 'px', height: Math.random() * 4 + 1 + 'px' }} />
-      ))}
-    </div>
-  );
-};
+const getToken = () => localStorage.getItem('token');
 
-// --- UPGRADED SMART CURSOR ---
-const CustomCursor = () => {
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  const [isHovering, setIsHovering] = useState(false);
+/* ─── Background orbs ────────────────────────────────────────────────────── */
+const Orbs = () => (
+  <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div className="absolute w-[700px] h-[700px] rounded-full bg-terracotta-200 blur-[140px] opacity-40 -top-64 -left-48" />
+    <div className="absolute w-[500px] h-[500px] rounded-full bg-mustard-100   blur-[120px] opacity-50 -bottom-40 right-0" />
+    <div className="absolute w-[350px] h-[350px] rounded-full bg-olive-200     blur-[100px] opacity-30 top-1/2 right-1/3 -translate-y-1/2" />
+  </div>
+);
 
-  useEffect(() => {
-    // 1. Move the cursor
-    const moveCursor = (e) => {
-      cursorX.set(e.clientX - 16);
-      cursorY.set(e.clientY - 16);
-    };
+/* ─── Toast ───────────────────────────────────────────────────────────────── */
+const Toast = ({ notif, onDismiss }) => (
+  <motion.div initial={{ opacity: 0, x: 40, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }}
+    exit={{ opacity: 0, x: 40 }}
+    className="flex items-start gap-3 glass rounded-xl px-4 py-3 max-w-xs shadow-lg">
+    <CheckCircle2 className="w-4 h-4 text-olive-600 mt-0.5 shrink-0" />
+    <p className="text-sm text-terracotta-900 flex-1 leading-snug font-medium">{notif.message}</p>
+    <button onClick={() => onDismiss(notif.id)} className="text-terracotta-400 hover:text-terracotta-700 transition-colors">
+      <X className="w-3.5 h-3.5" />
+    </button>
+  </motion.div>
+);
 
-    // 2. Check if hovering over clickable elements
-    const handleMouseOver = (e) => {
-      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'INPUT' || e.target.closest('button')) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
-    };
+const NAV = [
+  { id: 'documents', label: 'Documents',   icon: FileText      },
+  { id: 'chat',      label: 'Neural Chat', icon: MessageSquare },
+  { id: 'quizzes',   label: 'Quizzes',     icon: Brain         },
+  { id: 'analytics', label: 'Analytics',   icon: BarChart2     },
+  { id: 'progress',  label: 'Progress',    icon: TrendingUp    },
+];
 
-    window.addEventListener('mousemove', moveCursor);
-    window.addEventListener('mouseover', handleMouseOver);
+const NavItem = ({ id, label, icon: Icon, active, onClick }) => (
+  <button onClick={() => onClick(id)}
+    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left border-l-2 ${
+      active
+        ? 'bg-white/75 border-terracotta-500 text-terracotta-900 shadow-sm'
+        : 'border-transparent text-terracotta-700 hover:bg-white/50 hover:text-terracotta-950'
+    }`}>
+    <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-terracotta-600' : 'text-terracotta-500'}`} />
+    {label}
+    {active && <ChevronRight className="w-3.5 h-3.5 ml-auto text-terracotta-400" />}
+  </button>
+);
 
-    return () => {
-      window.removeEventListener('mousemove', moveCursor);
-      window.removeEventListener('mouseover', handleMouseOver);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <motion.div
-      className="fixed top-0 left-0 pointer-events-none z-[9999] mix-blend-difference"
-      style={{
-        translateX: cursorX,
-        translateY: cursorY,
-      }}
-    >
-      {/* Outer Ring - Expands on Hover */}
-      <motion.div
-        animate={{
-          scale: isHovering ? 1.5 : 1,
-          opacity: isHovering ? 1 : 0.5,
-          borderColor: isHovering ? '#00f3ff' : '#ffffff'
-        }}
-        className="w-8 h-8 rounded-full border-2 transition-colors duration-200"
-      />
-
-      {/* Inner Dot - Always visible */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-neon-blue rounded-full shadow-[0_0_10px_#00f3ff]" />
-    </motion.div>
-  );
-};
-
-// --- MAIN DASHBOARD ---
-function Dashboard() {
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState("AWAITING INPUT");
-  const [documents, setDocuments] = useState([]);
-  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
-  const [activeTab, setActiveTab] = useState('vault');
-  const [targetUserId, setTargetUserId] = useState(null);
-  const userRole = localStorage.getItem('role');
+export default function Dashboard() {
+  const [activeTab, setActiveTab]       = useState('documents');
+  const [documents, setDocuments]       = useState([]);
+  const [isLoadingDocs, setLoadingDocs] = useState(true);
+  const [notifications, setNotifs]      = useState([]);
+  const [showNotifs, setShowNotifs]     = useState(false);
+  const [unread, setUnread]             = useState(0);
+  const wsRef    = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch Documents
-  const fetchDocuments = async (targetId = null) => {
-    setIsLoadingDocs(true);
+  const fetchDocuments = useCallback(async () => {
+    setLoadingDocs(true);
     try {
-      const token = localStorage.getItem("token");
-      let url = `${API_BASE}/documents/`;
-      if (targetId) url += `?target_user_id=${targetId}`;
-      const res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
-      if (res.ok) {
-        setDocuments(await res.json());
-      }
-    } catch (err) { console.error(err); }
-    finally { setIsLoadingDocs(false); }
-  };
+      const res = await fetch(`${API_BASE}/documents/`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (res.ok) setDocuments(await res.json());
+    } catch { /* ignore */ }
+    finally { setLoadingDocs(false); }
+  }, []);
 
-  useEffect(() => { fetchDocuments(targetUserId); }, [targetUserId]);
+  useEffect(() => { fetchDocuments(); }, [fetchDocuments]);
 
-  const handleLogout = () => { localStorage.clear(); navigate('/login'); };
-  const handleSelectClient = (clientId) => { setTargetUserId(clientId); setActiveTab('vault'); };
+  const addNotif = useCallback((message) => {
+    const id = Date.now();
+    setNotifs(p => [...p, { id, message }]);
+    setUnread(u => u + 1);
+    setTimeout(() => setNotifs(p => p.filter(n => n.id !== id)), 6000);
+  }, []);
 
-  // --- 🔴 UPDATED UPLOAD LOGIC ---
-  const handleFileUpload = async (event) => {
-    const selectedFile = event.target.files[0];
-    if (!selectedFile) return;
-
-    // 1. DUPLICATE CHECK
-    const isDuplicate = documents.some(doc => doc.filename === selectedFile.name);
-
-    if (isDuplicate) {
-      setUploadStatus("ERROR: DUPLICATE FILE DETECTED");
-      setTimeout(() => setUploadStatus("AWAITING INPUT"), 3000);
-      return;
-    }
-
-    setFile(selectedFile);
-    setUploading(true);
-    setUploadStatus("ENCRYPTING...");
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(`${API_BASE}/upload/`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` },
-        body: formData,
-      });
-
-      if (response.ok) {
-        setUploadStatus("UPLOAD SECURED");
-
-        // 2. AUTO-STATUS UPDATE SIMULATION
-        const newTempDoc = {
-          id: Date.now(),
-          filename: selectedFile.name,
-          file_size: selectedFile.size,
-          upload_date: new Date().toISOString(),
-          status: "pending"
-        };
-
-        setDocuments(prev => [newTempDoc, ...prev]);
-
-        setTimeout(() => {
-          setDocuments(prev => prev.map(d => d.id === newTempDoc.id ? { ...d, status: "processing" } : d));
-        }, 2000);
-
-        setTimeout(() => {
-          setDocuments(prev => prev.map(d => d.id === newTempDoc.id ? { ...d, status: "completed" } : d));
-          fetchDocuments(targetUserId); // Refresh from DB to get real ID
-        }, 5000);
-
-        setTimeout(() => { setFile(null); setUploading(false); setUploadStatus("AWAITING INPUT"); }, 3000);
-      } else {
-        const textData = await response.text();
-        try {
-          const errorData = JSON.parse(textData);
-          setUploadStatus("FAILED: " + (errorData.detail || "Error"));
-        } catch {
-          setUploadStatus(`FAILED (${response.status}): ${textData.substring(0, 50)}...`);
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${window.location.host}/ws/notifications?token=${token}`);
+    wsRef.current = ws;
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'document.ready') {
+          addNotif(`Document ready: ${data.filename ?? `#${data.document_id}`}`);
+          fetchDocuments();
         }
-        setUploading(false);
-      }
-    } catch (error) {
-      setUploadStatus("CONNECTION SEVERED");
-      setUploading(false);
-    }
-  };
+      } catch { /* ignore */ }
+    };
+    ws.onerror = () => {};
+    return () => ws.close();
+  }, [addNotif, fetchDocuments]);
+
+  const dismissNotif = (id) => setNotifs(p => p.filter(n => n.id !== id));
+  const handleLogout = () => { localStorage.clear(); navigate('/login'); };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-neon-blue selection:text-black overflow-hidden relative overflow-y-auto">
-      <CustomCursor />
-      <ParticleBackground />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+    <div className="min-h-screen flex relative">
+      <Orbs />
 
-      {/* Header */}
-      <nav className="relative z-20 flex justify-between items-center p-6 border-b border-white/10 bg-zinc-900/50 backdrop-blur-md sticky top-0">
-        <div className="flex items-center gap-2">
-          <Cpu className="text-neon-blue w-6 h-6" />
-          <span className="font-bold tracking-wider text-xl">DOCU<span className="text-neon-blue">BRAIN</span></span>
-        </div>
-        <div className="flex items-center gap-4">
-          {targetUserId && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-neon-blue/10 border border-neon-blue/30 rounded-full animate-pulse">
-              <span className="w-2 h-2 bg-neon-blue rounded-full" />
-              <span className="text-xs font-bold text-neon-blue">VIEWING CLIENT ID: {targetUserId}</span>
-              <button onClick={() => setTargetUserId(null)} className="ml-2 hover:text-white text-neon-blue/50">✕</button>
+      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
+      <aside className="fixed top-0 left-0 h-full w-56 z-20 flex flex-col"
+        style={{
+          background: 'rgba(253,245,242,0.78)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(255,248,240,0.90)',
+          boxShadow: 'inset -1px 0 0 rgba(193,112,90,0.18)',
+        }}>
+
+        {/* Logo */}
+        <div className="px-4 py-5" style={{ borderBottom: '1px solid rgba(255,248,240,0.85)' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-terracotta-600 to-olive-600 flex items-center justify-center shadow-md shadow-terracotta-200">
+              <Layers className="w-4 h-4 text-white" />
             </div>
-          )}
-          <div className="flex items-center gap-2 px-3 py-1 bg-zinc-800 rounded-full border border-white/5">
-            <User className="w-4 h-4 text-zinc-400" />
-            <span className="text-xs font-mono text-zinc-300 uppercase">{userRole || 'Unknown'}</span>
+            <span className="font-black tracking-tight text-terracotta-950">Docu<span className="grad-text">Brain</span></span>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-2 text-zinc-400 hover:text-red-400 transition-colors text-sm font-mono group cursor-pointer">
-            LOGOUT <LogOut className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+          {NAV.map(item => (
+            <NavItem key={item.id} {...item} active={activeTab === item.id} onClick={setActiveTab} />
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="p-3 space-y-1" style={{ borderTop: '1px solid rgba(255,248,240,0.85)' }}>
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
+            <div className="w-7 h-7 rounded-full bg-terracotta-100 flex items-center justify-center">
+              <User className="w-3.5 h-3.5 text-terracotta-700" />
+            </div>
+            <span className="text-xs text-terracotta-800 font-bold">User</span>
+          </div>
+          <button onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-terracotta-600 font-semibold hover:text-red-700 hover:bg-red-50/60 transition-all">
+            <LogOut className="w-4 h-4" /> Sign out
           </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* Tab Navigation */}
-      <div className="relative z-10 flex justify-center mt-8 gap-2 md:gap-4 flex-wrap px-4">
-        {[
-          { id: 'vault', label: 'DATA VAULT', icon: Database },
-          { id: 'chat', label: 'NEURAL CHAT', icon: MessageSquare },
-          { id: 'meet', label: 'SECURE MEET', icon: Video },
-          { id: 'network', label: 'NETWORK', icon: Globe },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm tracking-wider transition-all duration-300 border flex items-center gap-2 cursor-pointer ${activeTab === tab.id
-              ? 'bg-neon-blue text-black border-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.4)]'
-              : 'bg-zinc-900/80 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-zinc-300'
-              }`}
-          >
-            <tab.icon className="w-4 h-4" /> {tab.label}
-          </button>
-        ))}
+      {/* ── Main ────────────────────────────────────────────────────────────── */}
+      <div className="flex-1 ml-56 flex flex-col min-h-screen relative z-10">
+
+        {/* Top bar */}
+        <header className="sticky top-0 z-10 h-14 flex items-center justify-between px-6"
+          style={{
+            background: 'rgba(253,245,242,0.72)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(255,248,240,0.88)',
+          }}>
+          <h1 className="text-sm font-bold text-terracotta-900 capitalize">
+            {NAV.find(n => n.id === activeTab)?.label ?? 'Dashboard'}
+          </h1>
+
+          <div className="relative">
+            <button onClick={() => { setShowNotifs(v => !v); setUnread(0); }}
+              className="relative p-2 rounded-xl bg-white/60 hover:bg-white/80 border border-terracotta-100 transition-all text-terracotta-600 hover:text-terracotta-900">
+              <Bell className="w-4 h-4" />
+              {unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-terracotta-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {showNotifs && (
+                <motion.div initial={{ opacity: 0, y: -8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  className="absolute right-0 top-11 w-72 glass rounded-xl overflow-hidden z-50 shadow-xl">
+                  <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,248,240,0.80)' }}>
+                    <span className="text-xs font-bold text-terracotta-800">Notifications</span>
+                    <button onClick={() => setShowNotifs(false)} className="text-terracotta-400 hover:text-terracotta-700 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {notifications.length === 0
+                    ? <p className="text-terracotta-500 text-xs text-center py-6 font-medium">No notifications yet</p>
+                    : <div className="divide-y divide-terracotta-50 max-h-64 overflow-y-auto">
+                        {notifications.map(n => (
+                          <div key={n.id} className="flex items-start gap-2.5 px-4 py-3">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-olive-600 mt-0.5 shrink-0" />
+                            <p className="text-xs text-terracotta-900 flex-1 font-medium">{n.message}</p>
+                            <button onClick={() => dismissNotif(n.id)} className="text-terracotta-300 hover:text-terracotta-600 transition-colors">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                  }
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          <AnimatePresence mode="wait">
+            <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
+              {activeTab === 'documents' && <DocumentList documents={documents} isLoading={isLoadingDocs} onDelete={fetchDocuments} onUpload={fetchDocuments} />}
+              {activeTab === 'chat'      && <ChatInterface />}
+              {activeTab === 'quizzes'   && <Quizzes documents={documents} />}
+              {activeTab === 'analytics' && <Analytics />}
+              {activeTab === 'progress'  && <Progress />}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
 
-      {/* Main Content */}
-      <main className="relative z-10 flex flex-col items-center justify-start min-h-[calc(100vh-140px)] p-4 pt-8">
-
-        {/* TAB 1: VAULT */}
-        <div className={activeTab === 'vault' ? 'w-full flex flex-col items-center' : 'hidden'}>
-          {!targetUserId && (
-            <motion.div className="relative group w-full max-w-xl mb-12" whileHover={{ scale: 1.01 }}>
-              <div className="absolute -inset-1 bg-gradient-to-r from-neon-blue to-purple-600 rounded-2xl opacity-20 group-hover:opacity-50 blur transition duration-1000" />
-              <div className="relative bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center">
-                {uploading ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 border-4 border-zinc-800 border-t-neon-blue rounded-full mb-6 animate-spin" />
-                    <p className="font-mono text-neon-blue">{uploadStatus}</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mb-4">
-                      <Upload className="w-8 h-8 text-zinc-400" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Upload Data</h3>
-                    <label className="relative inline-flex items-center px-8 py-3 bg-neon-blue rounded-lg cursor-pointer hover:bg-cyan-400 transition-colors text-black font-bold">
-                      <FileText className="w-4 h-4 mr-2" /> SELECT FILE
-                      <input type="file" className="hidden" onChange={handleFileUpload} />
-                    </label>
-                    {uploadStatus.includes("ERROR") && <p className="mt-3 text-red-400 font-mono text-xs">{uploadStatus}</p>}
-                  </>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          <DocumentList
-            documents={documents}
-            isLoading={isLoadingDocs}
-            onDelete={() => fetchDocuments(targetUserId)}
-          />
-        </div>
-
-        {/* TAB 2: CHAT (HIDDEN, NOT UNMOUNTED) */}
-        <div className={activeTab === 'chat' ? 'w-full flex justify-center h-full' : 'hidden'}>
-          <ChatInterface targetUserId={targetUserId} />
-        </div>
-
-        {/* TAB 3: MEET */}
-        <div className={activeTab === 'meet' ? 'w-full flex justify-center h-full' : 'hidden'}>
-          <MeetingInterface />
-        </div>
-
-        {/* TAB 4: NETWORK */}
-        <div className={activeTab === 'network' ? 'w-full flex justify-center h-full' : 'hidden'}>
-          <NetworkInterface onSelectClient={handleSelectClient} />
-        </div>
-
-      </main>
+      {/* Floating toasts */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 items-end">
+        <AnimatePresence>
+          {notifications.slice(-3).map(n => <Toast key={n.id} notif={n} onDismiss={dismissNotif} />)}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
-
-export default Dashboard;

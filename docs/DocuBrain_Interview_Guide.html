@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DocuBrain — The Ultimate Engineering & Interview Revision Guide</title>
+<style>
+  :root{
+    --ink:#1a1a2e;
+    --muted:#5b5b74;
+    --accent:#6d28d9;       /* violet */
+    --accent2:#0e7490;      /* teal */
+    --accent3:#b45309;      /* amber */
+    --line:#e4e4ef;
+    --bg-code:#1e1e2e;
+    --bg-soft:#f6f5fb;
+    --green:#15803d;
+    --red:#b91c1c;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  body{
+    font-family:"Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color:var(--ink);
+    line-height:1.62;
+    font-size:10.6pt;
+    margin:0;
+  }
+
+  /* ── Page geometry ─────────────────────────────────────── */
+  @page{
+    size:A4;
+    margin:18mm 16mm 20mm 16mm;
+  }
+  @page{
+    @bottom-center{ content:counter(page); color:#999; font-size:9pt; }
+  }
+
+  .page-break{ page-break-before:always; }
+  h1,h2,h3,h4{ page-break-after:avoid; }
+  pre,table,.box,figure{ page-break-inside:avoid; }
+
+  /* ── Cover ─────────────────────────────────────────────── */
+  .cover{
+    height:262mm;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-start;
+    background:linear-gradient(135deg,#6d28d9 0%, #0e7490 100%);
+    color:#fff;
+    margin:-18mm -16mm 0 -16mm;
+    padding:0 22mm;
+    page-break-after:always;
+  }
+  .cover .kicker{
+    font-size:12pt; letter-spacing:5px; text-transform:uppercase;
+    opacity:.85; margin-bottom:18px; font-weight:600;
+  }
+  .cover h1{
+    font-size:43pt; line-height:1.05; margin:0 0 14px 0; font-weight:800;
+    letter-spacing:-1px;
+  }
+  .cover .sub{ font-size:15pt; opacity:.95; font-weight:400; max-width:80%; }
+  .cover .meta{
+    margin-top:46px; font-size:10.5pt; opacity:.9; line-height:1.9;
+    border-top:1px solid rgba(255,255,255,.35); padding-top:20px; width:80%;
+  }
+  .cover .badge-row{ margin-top:30px; display:flex; flex-wrap:wrap; gap:8px; }
+  .cover .badge{
+    background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.32);
+    border-radius:20px; padding:5px 13px; font-size:8.6pt; font-weight:600;
+  }
+
+  /* ── Headings ──────────────────────────────────────────── */
+  h1.section{
+    font-size:24pt; color:var(--accent); margin:0 0 4px 0; font-weight:800;
+    letter-spacing:-.5px;
+  }
+  .section-tag{
+    display:inline-block; font-size:8.5pt; font-weight:700; letter-spacing:2px;
+    text-transform:uppercase; color:#fff; background:var(--accent2);
+    padding:3px 11px; border-radius:4px; margin-bottom:10px;
+  }
+  h2{
+    font-size:15.5pt; color:var(--ink); margin:26px 0 8px 0; font-weight:700;
+    border-bottom:2px solid var(--line); padding-bottom:5px;
+  }
+  h3{ font-size:12.5pt; color:var(--accent2); margin:18px 0 5px 0; font-weight:700; }
+  h4{ font-size:11pt; color:var(--accent3); margin:14px 0 4px 0; font-weight:700; }
+
+  p{ margin:7px 0; }
+  ul,ol{ margin:7px 0 7px 0; padding-left:22px; }
+  li{ margin:3px 0; }
+  strong{ color:#11112a; }
+  em{ color:var(--muted); }
+
+  a{ color:var(--accent); text-decoration:none; }
+
+  code{
+    font-family:"Cascadia Code","Consolas","SF Mono",monospace;
+    background:var(--bg-soft); color:#9333ea; padding:1px 5px;
+    border-radius:4px; font-size:9.2pt; border:1px solid #ece9f6;
+  }
+  pre{
+    background:var(--bg-code); color:#e6e6f0; padding:13px 16px; border-radius:8px;
+    overflow-x:auto; font-size:8.7pt; line-height:1.5; margin:10px 0;
+    font-family:"Cascadia Code","Consolas","SF Mono",monospace;
+    border-left:4px solid var(--accent);
+  }
+  pre code{ background:none; color:inherit; border:none; padding:0; font-size:inherit; }
+  .c-key{ color:#c792ea; }    /* keyword */
+  .c-str{ color:#c3e88d; }    /* string */
+  .c-com{ color:#7a7a99; font-style:italic; }  /* comment */
+  .c-fn{ color:#82aaff; }     /* function */
+  .c-num{ color:#f78c6c; }    /* number */
+
+  /* ── Tables ────────────────────────────────────────────── */
+  table{
+    width:100%; border-collapse:collapse; margin:12px 0; font-size:9.4pt;
+  }
+  th{
+    background:var(--accent); color:#fff; text-align:left; padding:7px 10px;
+    font-weight:600; font-size:9pt;
+  }
+  td{ border:1px solid var(--line); padding:6px 10px; vertical-align:top; }
+  tr:nth-child(even) td{ background:var(--bg-soft); }
+
+  /* ── Call-out boxes ────────────────────────────────────── */
+  .box{
+    border-radius:8px; padding:12px 16px; margin:13px 0; font-size:9.8pt;
+    border:1px solid var(--line); background:#fff;
+  }
+  .box .box-title{ font-weight:700; font-size:9.5pt; margin-bottom:5px;
+    text-transform:uppercase; letter-spacing:1px; }
+
+  .box.q{ background:#f5f3ff; border-left:4px solid var(--accent); }
+  .box.q .box-title{ color:var(--accent); }
+  .box.why{ background:#ecfeff; border-left:4px solid var(--accent2); }
+  .box.why .box-title{ color:var(--accent2); }
+  .box.warn{ background:#fffbeb; border-left:4px solid var(--accent3); }
+  .box.warn .box-title{ color:var(--accent3); }
+  .box.key{ background:#f0fdf4; border-left:4px solid var(--green); }
+  .box.key .box-title{ color:var(--green); }
+
+  .qa{ margin:10px 0; }
+  .qa .qn{ font-weight:700; color:var(--accent); margin-bottom:2px; }
+  .qa .qn::before{ content:"Q "; color:var(--accent2); font-weight:800; }
+  .qa .an{ margin:0 0 10px 0; padding-left:2px; }
+  .qa .an::before{ content:"A  "; color:var(--green); font-weight:800; }
+
+  /* ── TOC ───────────────────────────────────────────────── */
+  .toc{ font-size:10.5pt; }
+  .toc h1{ color:var(--accent); font-size:22pt; margin-bottom:18px; }
+  .toc ol{ list-style:none; padding-left:0; counter-reset:toc; }
+  .toc > ol > li{
+    counter-increment:toc; margin:9px 0; font-weight:700; font-size:11.5pt;
+    border-bottom:1px dotted var(--line); padding-bottom:7px;
+  }
+  .toc > ol > li::before{
+    content:counter(toc) ".  "; color:var(--accent2); font-weight:800;
+  }
+  .toc ul{ list-style:none; padding-left:24px; margin:4px 0; }
+  .toc ul li{ font-weight:400; font-size:9.8pt; color:var(--muted); margin:2px 0; }
+  .toc ul li::before{ content:"– "; color:#c4c4d4; }
+
+  .lead{ font-size:11.5pt; color:var(--muted); margin:6px 0 16px 0; }
+
+  .pill{
+    display:inline-block; font-size:8pt; font-weight:700; padding:2px 8px;
+    border-radius:10px; margin-right:4px; letter-spacing:.5px;
+  }
+  .pill.green{ background:#dcfce7; color:#15803d; }
+  .pill.amber{ background:#fef3c7; color:#b45309; }
+  .pill.violet{ background:#ede9fe; color:#6d28d9; }
+  .pill.teal{ background:#cffafe; color:#0e7490; }
+
+  .flow{
+    background:var(--bg-soft); border:1px solid var(--line); border-radius:8px;
+    padding:14px 16px; margin:12px 0; font-size:9.5pt;
+  }
+  .flow .step{ margin:5px 0; padding-left:30px; position:relative; }
+  .flow .step .num{
+    position:absolute; left:0; top:1px; width:21px; height:21px; border-radius:50%;
+    background:var(--accent); color:#fff; font-size:8.5pt; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+
+  hr{ border:none; border-top:1px solid var(--line); margin:22px 0; }
+
+  .small{ font-size:9pt; color:var(--muted); }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:9pt; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ COVER ════════════════════ -->
+<div class="cover">
+  <div class="kicker">Engineering Deep-Dive</div>
+  <h1>DocuBrain</h1>
+  <div class="sub">The Ultimate System-Design &amp; Interview Revision Guide — every endpoint, every tool, every concept, end to end.</div>
+  <div class="badge-row">
+    <span class="badge">FastAPI · async</span>
+    <span class="badge">PostgreSQL · asyncpg</span>
+    <span class="badge">SQLAlchemy 2.0</span>
+    <span class="badge">Celery · Redis</span>
+    <span class="badge">PgBouncer</span>
+    <span class="badge">Pinecone · RAG</span>
+    <span class="badge">Gemini · LangChain</span>
+    <span class="badge">Nginx</span>
+    <span class="badge">Docker</span>
+    <span class="badge">Terraform · AWS</span>
+    <span class="badge">GitHub Actions</span>
+    <span class="badge">Prometheus</span>
+    <span class="badge">k6</span>
+  </div>
+  <div class="meta">
+    A complete walkthrough of the DocuBrain AI Study Workspace backend.<br>
+    Written to be read cover-to-cover the night before a systems / backend interview.<br>
+    <strong>Author:</strong> Rajit &nbsp;·&nbsp; <strong>Scope:</strong> architecture, request flows, tooling, and a 100+ question Q&amp;A bank.
+  </div>
+</div>
+
+<!-- ════════════════════ TOC ════════════════════ -->
+<div class="toc">
+  <h1>What's Inside</h1>
+  <p class="lead">Read it top to bottom, or jump to the section an interviewer is poking at.</p>
+  <ol>
+    <li>The 30-Second Pitch &amp; The Big Picture
+      <ul>
+        <li>What DocuBrain is, the end-to-end architecture, the request lifecycle</li>
+      </ul>
+    </li>
+    <li>The Tech Stack — Every Tool, Why It Exists, How We Use It
+      <ul>
+        <li>FastAPI · Uvicorn · PostgreSQL · asyncpg vs psycopg2 · SQLAlchemy 2.0 · Alembic</li>
+        <li>PgBouncer · Redis (4 roles) · Celery · Pinecone · Gemini · LangChain · MinIO/S3</li>
+        <li>Nginx · Docker · Prometheus · JWT stack · Terraform · GitHub Actions · k6</li>
+      </ul>
+    </li>
+    <li>Endpoint-by-Endpoint Deep Flows
+      <ul>
+        <li>Auth (register / login / refresh / logout) · Documents (upload / list / delete)</li>
+        <li>The Celery worker pipeline · Chat (sessions + SSE streaming RAG)</li>
+        <li>Quiz (generate / attempt / score) · Progress · Analytics · WebSocket notifications</li>
+      </ul>
+    </li>
+    <li>Cross-Cutting Patterns (the stuff that impresses)
+      <ul>
+        <li>Async connection discipline · Circuit breaker · Two-tier rate limiting</li>
+        <li>RBAC policy layer · Append-only audit log · Correlation IDs · Read replica · RAG internals</li>
+      </ul>
+    </li>
+    <li>The Roadmap — Phases 0→5, What Was Built &amp; Why</li>
+    <li>The Concept &amp; Interview Q&amp;A Bank (100+ questions)
+      <ul>
+        <li>Async/event loop/GIL · DB &amp; pooling · Auth · RAG/vectors · Distributed systems</li>
+        <li>Caching · Security/OWASP · Observability · Networking · Scaling &amp; trade-offs</li>
+      </ul>
+    </li>
+  </ol>
+  <div class="box key" style="margin-top:20px;">
+    <div class="box-title">How to use this guide</div>
+    Each tool and endpoint section ends with the <strong>exact questions an interviewer asks</strong> and a tight model answer. If you can explain Sections 1, 4, and the Q&amp;A bank out loud, you can defend this project against any backend interviewer.
+  </div>
+</div>
+
+<!-- ════════════════════ SECTION 1 ════════════════════ -->
+<div class="page-break"></div>
+<span class="section-tag">Section 1</span>
+<h1 class="section">The Big Picture</h1>
+<p class="lead">If you only memorise one page before the interview, make it this one.</p>
+
+<h2>The 30-second pitch</h2>
+<p><strong>DocuBrain is an AI study workspace.</strong> A user uploads a PDF; the system extracts its text, splits it into chunks, turns each chunk into a vector embedding, and stores those vectors in a vector database. The user can then (a) <strong>chat</strong> with the document — questions are answered by a large language model that is fed only the most relevant chunks (this is <strong>RAG</strong>, Retrieval-Augmented Generation), and (b) auto-generate <strong>quizzes and flashcards</strong> from the document, take them, and track their <strong>progress and analytics</strong> over time.</p>
+
+<p>The interesting part is not the AI — it's that the whole thing is built like a <strong>production backend</strong>: async API, background workers, connection pooling, circuit breakers, rate limiting, structured logging, metrics, real-time notifications, containerised, with infrastructure-as-code and a CI/CD pipeline.</p>
+
+<div class="box why">
+  <div class="box-title">The one-liner that frames every answer</div>
+  "It's a FastAPI async backend where <strong>fast things happen in the request</strong> (auth, CRUD, cache reads) and <strong>slow things happen out of band</strong> (PDF embedding in a Celery worker, LLM calls released from the DB connection), fronted by Nginx and pooled through PgBouncer so it survives concurrency on cheap hardware."
+</div>
+
+<h2>The component map</h2>
+<p>Eight moving parts. Know what each one is and what would break if you removed it.</p>
+
+<table>
+  <tr><th>Component</th><th>Technology</th><th>Its one job</th><th>Remove it and…</th></tr>
+  <tr><td><strong>Reverse proxy</strong></td><td>Nginx</td><td>The only internet-facing process. TLS, rate limit, gzip, load-balance, buffer slow clients.</td><td>FastAPI workers get held hostage by slow clients; no edge throttling.</td></tr>
+  <tr><td><strong>API</strong></td><td>FastAPI + Uvicorn</td><td>Async HTTP layer: auth, validation, business logic orchestration.</td><td>No app.</td></tr>
+  <tr><td><strong>Worker</strong></td><td>Celery</td><td>Runs the slow PDF→embedding pipeline off the request path.</td><td>Uploads would block for 30–90s and time out.</td></tr>
+  <tr><td><strong>Broker / cache</strong></td><td>Redis</td><td>Celery queue, response cache, rate-limit counters, pub/sub for WebSockets.</td><td>No background jobs, no cache, no real-time push.</td></tr>
+  <tr><td><strong>Pooler</strong></td><td>PgBouncer</td><td>Multiplexes hundreds of app connections onto ~10 real Postgres connections.</td><td>Postgres hits its connection ceiling under load.</td></tr>
+  <tr><td><strong>Database</strong></td><td>PostgreSQL</td><td>Source of truth: users, documents, chats, quizzes, attempts, audit log.</td><td>No persistence.</td></tr>
+  <tr><td><strong>Object store</strong></td><td>MinIO / AWS S3</td><td>Stores the raw PDF bytes (binary blobs don't belong in Postgres).</td><td>Nowhere to put the files.</td></tr>
+  <tr><td><strong>Vector DB</strong></td><td>Pinecone</td><td>Stores chunk embeddings; does similarity search for RAG.</td><td>Chat can't find relevant context.</td></tr>
+  <tr><td><strong>AI</strong></td><td>Gemini (+ LangChain)</td><td>Embeddings model + the chat/quiz LLM.</td><td>No intelligence layer.</td></tr>
+</table>
+
+<h2>The request lifecycle — what happens on every single call</h2>
+<p>This is the spine. An interviewer who asks "walk me through a request" wants exactly this:</p>
+
+<div class="flow">
+  <div class="step"><span class="num">1</span><strong>Browser → Nginx :80/:443.</strong> Nginx terminates TLS, applies an IP-level rate limit, and decides which <code>location</code> block matches.</div>
+  <div class="step"><span class="num">2</span><strong>Nginx → Uvicorn :8000</strong> via the <code>upstream</code> pool using <code>least_conn</code> load balancing over a keep-alive connection. Nginx injects <code>X-Forwarded-For</code> and a <code>X-Correlation-ID</code>.</div>
+  <div class="step"><span class="num">3</span><strong>CorrelationIDMiddleware</strong> runs first: reads/creates the correlation ID, stores it in a <code>ContextVar</code>, starts a latency timer, increments the Prometheus in-flight gauge.</div>
+  <div class="step"><span class="num">4</span><strong>Routing + dependency injection.</strong> FastAPI matches the route and resolves its <code>Depends()</code> tree: <code>get_current_user</code> (decode JWT → load User), <code>get_db</code> (lease an AsyncSession), and any rate-limit dependency (atomic Redis <code>INCR</code>).</div>
+  <div class="step"><span class="num">5</span><strong>Pydantic validates</strong> the request body against the schema. Invalid → automatic <code>422</code> before your code runs.</div>
+  <div class="step"><span class="num">6</span><strong>Controller → Service → Repository.</strong> The thin route handler calls a service (business logic), which calls repositories (SQL) and infrastructure clients (Redis/S3/Pinecone/Gemini).</div>
+  <div class="step"><span class="num">7</span><strong>Response serialised</strong> by the Pydantic <code>response_model</code>, gzipped by Nginx, returned. Middleware records latency + status into Prometheus and logs one structured JSON line with the correlation ID.</div>
+  <div class="step"><span class="num">8</span><strong>BackgroundTasks fire after the response is sent</strong> — e.g. the audit-log write — so they never add to the user's perceived latency.</div>
+</div>
+
+<h2>The layered architecture (and why it's layered)</h2>
+<p>The backend is split into strict layers. This is the <strong>"separation of concerns"</strong> answer and it's worth stating explicitly because it shows intentional design:</p>
+
+<pre><span class="c-com"># Request flows DOWN; each layer only knows the layer directly below it.</span>
+<span class="c-fn">api/v1/</span>           <span class="c-com"># Controllers — thin. Parse request, call a service, return. No SQL here.</span>
+   │
+<span class="c-fn">services/</span>          <span class="c-com"># Business logic — the "what". Orchestrates repos + infra. No FastAPI here.</span>
+   │
+<span class="c-fn">repositories/</span>      <span class="c-com"># Data access — the "how". Pure SQLAlchemy queries. One table family each.</span>
+   │
+<span class="c-fn">models/</span>            <span class="c-com"># ORM table definitions (SQLAlchemy declarative).</span>
+<span class="c-fn">schemas/</span>           <span class="c-com"># Pydantic request/response contracts (the API's public shape).</span>
+<span class="c-fn">infrastructure/</span>    <span class="c-com"># External clients: Redis, S3/MinIO, Pinecone — one connection helper each.</span>
+<span class="c-fn">core/</span>              <span class="c-com"># Cross-cutting: security, rate_limiter, circuit_breaker, logging, metrics, rbac.</span></pre>
+
+<div class="box q">
+  <div class="box-title">Interview Q — "Why separate services from repositories? Isn't that over-engineering?"</div>
+  Because they change for <em>different reasons</em>. A repository changes when the <strong>database schema</strong> changes. A service changes when a <strong>business rule</strong> changes. Keeping them apart means I can swap Pinecone for pgvector by editing one infra file, unit-test business logic by mocking the repo, and read any endpoint in seconds because the controller is five lines. It also kills the classic "fat controller" anti-pattern where SQL, validation, and HTTP all tangle together.
+</div>
+
+<!-- ════════════════════ SECTION 2 ════════════════════ -->
+<div class="page-break"></div>
+<span class="section-tag">Section 2</span>
+<h1 class="section">The Tech Stack, Tool by Tool</h1>
+<p class="lead">For each tool: what it is, why it's here (vs the alternative), how DocuBrain actually uses it, and the questions you'll be asked.</p>
+
+<h2>2.1 FastAPI + Uvicorn — the async web layer</h2>
+<p><strong>What it is.</strong> FastAPI is a Python web framework built on <strong>ASGI</strong> (the async successor to WSGI). <strong>Uvicorn</strong> is the ASGI server that actually runs the event loop and speaks HTTP. FastAPI gives you routing, dependency injection, and automatic request/response validation via Pydantic; Uvicorn gives you the async runtime.</p>
+
+<p><strong>Why here.</strong> DocuBrain is <strong>I/O-bound</strong>, not CPU-bound: almost every request waits on the database, Redis, S3, Pinecone, or Gemini. Async is the perfect fit — while one request is waiting on Postgres, the same OS thread serves another request. A traditional sync framework (Flask on Gunicorn) would block a whole worker thread on each wait.</p>
+
+<div class="box why">
+  <div class="box-title">The mental model — async ≠ parallel</div>
+  There is <strong>one thread, one event loop</strong>. <code>async/await</code> is <em>cooperative multitasking</em>: at every <code>await</code>, the coroutine voluntarily yields control back to the loop, which runs other ready coroutines while the first one's I/O completes. It's a single chef juggling many pots, not many chefs. This is why a single Uvicorn worker handles thousands of concurrent <em>waiting</em> connections — but also why one <code>time.sleep()</code> or a heavy CPU loop <strong>freezes the entire server</strong> (it never yields).
+</div>
+
+<p><strong>How DocuBrain uses it.</strong></p>
+<ul>
+  <li><strong>Dependency injection</strong> for everything cross-cutting: <code>Depends(get_current_user)</code>, <code>Depends(get_db)</code>, <code>Depends(general_rate_limit)</code>. Each route declares what it needs; FastAPI builds and tears down the tree per request.</li>
+  <li><strong>Pydantic response models</strong> (<code>response_model=DocumentResponse</code>) double as the serializer and as the OpenAPI/Swagger schema — the docs at <code>/docs</code> are generated, never hand-written.</li>
+  <li><strong>The golden rule we follow:</strong> any blocking SDK (the MinIO client, the Gemini sync SDK, pypdf) is pushed to a thread with <code>anyio.to_thread.run_sync(...)</code> so it never blocks the event loop.</li>
+  <li>Single worker per container (<code>uvicorn --workers 1</code>) because we scale <em>horizontally</em> with more containers behind Nginx, not with in-process workers.</li>
+</ul>
+
+<div class="qa">
+  <div class="qn">Why FastAPI over Flask/Django?</div>
+  <div class="an">I/O-bound workload + native async + automatic validation and OpenAPI docs from type hints. Django's ORM is sync-first and heavyweight for an API-only service; Flask would need a lot of bolt-ons (marshmallow, flask-restx) to match what FastAPI gives out of the box.</div>
+  <div class="qn">What is ASGI and how is it different from WSGI?</div>
+  <div class="an">WSGI is a <em>synchronous</em> contract: one request occupies one worker until it returns. ASGI is an <em>async</em> contract that also supports long-lived connections (WebSockets, SSE) — which WSGI fundamentally can't do. DocuBrain needs both async HTTP and WebSockets, so ASGI is mandatory.</div>
+  <div class="qn">What happens if you put a CPU-heavy loop in an async route?</div>
+  <div class="an">It blocks the event loop and stalls every other concurrent request on that worker. The fix is to offload to a thread (<code>run_in_executor</code>/<code>anyio.to_thread</code>) or, for truly heavy work, a separate process — which is exactly why PDF processing lives in Celery, not in the request.</div>
+</div>
+
+<h2>2.2 PostgreSQL — the source of truth</h2>
+<p><strong>What it is.</strong> A battle-tested relational database (ACID, SQL, strong typing, rich indexing, JSONB). DocuBrain runs Postgres 15.</p>
+<p><strong>Why here.</strong> The data is <strong>relational</strong> and <strong>consistency matters</strong>: users own documents, documents own quizzes, quizzes own items and attempts. Foreign keys with <code>ON DELETE CASCADE</code> enforce that graph at the DB level. We also lean on Postgres-specific features: <strong>JSONB</strong> columns (quiz options, answers, audit metadata), <strong>DATE_TRUNC</strong> for weekly analytics, and partial/composite indexes.</p>
+
+<p><strong>How DocuBrain uses it.</strong> Eight tables: <code>users</code>, <code>documents</code>, <code>chat_sessions</code>, <code>chat_messages</code>, <code>quizzes</code>, <code>quiz_items</code>, <code>quiz_attempts</code>, <code>audit_logs</code>. Every foreign key that points at a user/document is <strong>indexed</strong> (the access pattern is always "give me everything for this user"). The audit log uses <code>BigInteger</code> PK and <code>ON DELETE SET NULL</code> so records survive user deletion.</p>
+
+<div class="box key">
+  <div class="box-title">Indexing — the answer that always comes up</div>
+  Every query in the repositories filters by <code>user_id</code> or a foreign key, and every one of those columns has an index. <strong>Why it matters:</strong> without an index, Postgres does a <em>sequential scan</em> — reads every row — which is O(n) and gets linearly slower as data grows. A B-tree index makes it O(log n). The composite index <code>(user_id, created_at)</code> on chat sessions also serves the <code>ORDER BY created_at DESC</code> for free, because B-tree indexes are pre-sorted.
+</div>
+
+<h2>2.3 asyncpg vs psycopg2 — two drivers, on purpose</h2>
+<p>DocuBrain deliberately ships <strong>two</strong> Postgres drivers, and explaining why is a great signal of understanding the async/sync split:</p>
+<table>
+  <tr><th>Driver</th><th>Used by</th><th>Why</th></tr>
+  <tr><td><code>asyncpg</code></td><td>FastAPI (the API process)</td><td>Native async driver — non-blocking, integrates with the event loop. Fast.</td></tr>
+  <tr><td><code>psycopg2</code></td><td>Celery worker (a separate OS process)</td><td>The worker is plain synchronous Python with <em>no event loop</em>. A sync driver is the correct, simpler choice there.</td></tr>
+</table>
+<p>The same <code>DATABASE_URL</code> is rewritten at startup: <code>postgresql://</code> → <code>postgresql+asyncpg://</code> for the API, and the plain <code>postgresql://</code> form for the worker. There's also normalisation of the legacy <code>postgres://</code> scheme (Heroku/Render) → <code>postgresql://</code>, since SQLAlchemy 2.0 rejects the old form.</p>
+
+<div class="box warn">
+  <div class="box-title">The PgBouncer gotcha we handle: <code>statement_cache_size=0</code></div>
+  asyncpg caches prepared statements <em>per connection</em>. PgBouncer in <strong>transaction mode</strong> hands each transaction a possibly-different real connection, so a statement prepared on connection A doesn't exist on connection B → <code>"prepared statement does not exist"</code>. We disable asyncpg's prepared-statement cache (<code>statement_cache_size=0</code>) so the app is safe behind a transaction-mode pooler. This is a senior-level detail — mention it.
+</div>
+
+<h2>2.4 SQLAlchemy 2.0 (async) — the ORM</h2>
+<p><strong>What it is.</strong> The de-facto Python ORM. 2.0 introduced first-class async support via <code>AsyncSession</code> and <code>async_sessionmaker</code>.</p>
+<p><strong>How DocuBrain uses it.</strong></p>
+<ul>
+  <li><strong>Three engines:</strong> a primary async engine (writes + read-your-writes), an optional <strong>read-replica</strong> async engine (analytics/progress), and a sync engine for Celery.</li>
+  <li><strong>Right-sized pool:</strong> <code>pool_size=5, max_overflow=10</code> (hard ceiling 15) — tuned for free-tier hosts where the managed Postgres pooler caps connections. <code>pool_pre_ping=True</code> silently recycles dead connections; <code>pool_recycle=300</code> drops connections after 5 min to survive NAT/DNS timeouts.</li>
+  <li><code>expire_on_commit=False</code> — so ORM objects stay usable <em>after</em> commit, which matters in async code where a lazy-load after commit would explode.</li>
+  <li><strong>Eager loading with <code>selectinload</code></strong> to defeat the N+1 problem (see box).</li>
+</ul>
+
+<div class="box q">
+  <div class="box-title">Interview Q — "What's the N+1 query problem and how did you avoid it?"</div>
+  N+1 = you fetch a list of N quizzes (1 query), then loop and lazily load each quiz's items (N more queries) = N+1 round-trips. In async SQLAlchemy a lazy load after the session context can also raise. DocuBrain uses <code>.options(selectinload(Quiz.items))</code> — SQLAlchemy fetches all parents, then loads <em>all</em> children in <strong>one</strong> extra <code>WHERE id IN (...)</code> query. Two queries total, regardless of N.
+</div>
+
+<h2>2.5 Alembic — schema migrations</h2>
+<p><strong>What it is.</strong> SQLAlchemy's migration tool — version control for your database schema. Each change is a numbered, reversible script.</p>
+<p><strong>Why here.</strong> The schema must evolve <strong>safely and identically</strong> across dev, CI, and production. DocuBrain has four ordered migrations (<code>001_initial</code> → <code>002_audit_log</code> → <code>003_quiz_tables</code> → <code>004_quiz_attempts</code>). The container entrypoint runs <code>alembic upgrade head</code> <em>before</em> Uvicorn starts, so the schema is always current by the time the app serves traffic. CI runs the same command against a throwaway Postgres so a broken migration fails the build, not production.</p>
+
+<div class="box warn">
+  <div class="box-title">Why Alembic must bypass PgBouncer</div>
+  Migrations run multiple DDL statements that must share one persistent session. PgBouncer transaction mode drops the connection between transactions, which breaks that. So migrations connect <strong>directly to Postgres</strong> (<code>db:5432</code>), never through the pooler. This is called out explicitly in the stress-test script.
+</div>
+
+<div class="qa">
+  <div class="qn">Why not just <code>Base.metadata.create_all()</code>?</div>
+  <div class="an"><code>create_all</code> only creates tables that don't exist — it can't <em>alter</em> an existing table (add a column, change a type, add an index) without dropping data. Alembic produces explicit, reviewable, reversible diffs, which is the only safe way to change a production schema.</div>
+</div>
+
+<h2>2.6 PgBouncer — the connection pooler ("the bouncer")</h2>
+<p><strong>What it is.</strong> A lightweight connection pooler that sits between your app and Postgres. The app opens connections to PgBouncer (cheap); PgBouncer maintains a small pool of <em>real</em> Postgres connections and multiplexes everyone onto them.</p>
+
+<div class="box why">
+  <div class="box-title">Why it exists — the problem it solves</div>
+  Every Postgres connection is a <strong>separate OS process</strong> on the server costing ~5–10 MB RAM. Postgres caps total connections (often 100; free-tier poolers cap at 15–20). With 1 API container × 15 pool + 1 worker × 3 + bursts, you blow past the ceiling and new connections get rejected. PgBouncer accepts up to <strong>200 client connections</strong> (<code>MAX_CLIENT_CONN</code>) but keeps only <strong>~10 real ones</strong> open to Postgres (<code>DEFAULT_POOL_SIZE</code>). Hundreds of clients, a handful of real connections.
+</div>
+
+<p><strong>How DocuBrain configures it.</strong> <code>POOL_MODE=transaction</code> — a real connection is borrowed only for the duration of one transaction (<code>BEGIN…COMMIT</code>), then returned. This is the highest-throughput mode because connections are held for milliseconds, not for a whole client session. The app connects to <code>pgbouncer:5432</code> instead of <code>db:5432</code> — a one-line change in the connection string.</p>
+
+<table>
+  <tr><th>Pool mode</th><th>Connection held for…</th><th>Throughput</th><th>Caveat</th></tr>
+  <tr><td>session</td><td>the whole client session</td><td>low</td><td>safe — all features work</td></tr>
+  <tr><td><strong>transaction</strong> ✅</td><td>one transaction</td><td><strong>high</strong></td><td>no session state (SET, LISTEN/NOTIFY, session prepared stmts)</td></tr>
+  <tr><td>statement</td><td>one statement</td><td>highest</td><td>breaks multi-statement transactions</td></tr>
+</table>
+
+<div class="qa">
+  <div class="qn">What are the trade-offs of transaction mode?</div>
+  <div class="an">You lose session-scoped features: <code>SET</code>/<code>RESET</code>, <code>LISTEN</code>/<code>NOTIFY</code>, and session-level prepared statements. DocuBrain uses none of those in the request path — and it specifically disables asyncpg's prepared-statement cache (<code>statement_cache_size=0</code>) to be compatible. Migrations, which <em>do</em> need a persistent session, bypass PgBouncer and hit Postgres directly.</div>
+</div>
+
+<h2>2.7 Redis — one tool, four jobs</h2>
+<p><strong>What it is.</strong> An in-memory key-value store. Sub-millisecond reads/writes because everything lives in RAM. In DocuBrain it wears <strong>four different hats</strong> — calling this out shows you understand it's not "just a cache":</p>
+
+<table>
+  <tr><th>Role</th><th>What it does</th><th>Where</th></tr>
+  <tr><td><span class="pill teal">1 Cache</span></td><td>Caches document lists (30s TTL) and chat-session lists (60s TTL). Cache-aside pattern: check Redis → miss → hit Postgres → write back.</td><td><code>document_service</code>, <code>chat_service</code></td></tr>
+  <tr><td><span class="pill violet">2 Broker</span></td><td>The Celery message queue. The API pushes a task; the worker pops it.</td><td><code>document_worker</code></td></tr>
+  <tr><td><span class="pill amber">3 Rate limiter</span></td><td>Atomic <code>INCR</code> counters per <code>(user, time-window)</code> implement the fixed-window limit.</td><td><code>core/rate_limiter</code></td></tr>
+  <tr><td><span class="pill green">4 Pub/Sub</span></td><td>The worker <code>PUBLISH</code>es "document ready" to a per-user channel; the WebSocket endpoint is <code>SUBSCRIBE</code>d and pushes it to the browser.</td><td><code>ws.py</code> ↔ worker</td></tr>
+</table>
+
+<div class="box key">
+  <div class="box-title">Why <code>INCR</code> is the right primitive for rate limiting</div>
+  Redis is single-threaded, so <code>INCR</code> is <strong>atomic</strong> — even with 50 simultaneous requests, the counter increments cleanly with no race condition. The key is <code>rate:{window}:{user_id}:{bucket}</code> where <code>bucket = floor(now / window)</code>. First hit in a window arms a TTL of <code>2×window</code> so the key self-deletes — no cleanup job needed. The app separates broker traffic (<code>/0</code>) from cache traffic (<code>/1</code>) using different Redis logical databases.
+</div>
+
+<div class="qa">
+  <div class="qn">Redis is in-memory — what happens on restart / what about durability?</div>
+  <div class="an">For DocuBrain's uses it's acceptable to lose Redis: cache entries just repopulate from Postgres, rate-limit windows reset (fail-open), and a lost queued task is re-dispatchable. The <em>source of truth</em> is always Postgres. If we needed durability Redis offers RDB snapshots and AOF (append-only file), but we don't rely on it here.</div>
+  <div class="qn">Fixed-window vs sliding-window rate limiting?</div>
+  <div class="an">We use fixed-window (simplest, one INCR). Its flaw is the boundary burst — a client can do 2× the limit across a window edge. Sliding-window log or token-bucket fixes that but costs more memory/complexity. For an app-level guard sitting behind Nginx's own IP limiter, fixed-window is the right trade-off.</div>
+</div>
+
+<h2>2.8 Celery — the background worker ("the muscle")</h2>
+<p><strong>What it is.</strong> A distributed task queue. You decorate a function with <code>@celery_app.task</code>; calling <code>.delay(arg)</code> serialises the call into Redis and returns instantly. A separate worker process pops the message and runs the function.</p>
+
+<div class="box why">
+  <div class="box-title">Why the PDF pipeline MUST be async/out-of-band</div>
+  Processing a PDF = download from S3 + extract text + chunk + call Gemini embeddings for every chunk (throttled ~10/s) + upsert to Pinecone. For a big document that's <strong>30–90 seconds</strong>. If that ran inside the upload request: the HTTP connection would time out, an Uvicorn worker would be blocked the whole time, and the user would stare at a spinner. Instead, upload returns in milliseconds with <code>202-style</code> "processing", and Celery does the heavy lifting. The user is notified via WebSocket when it's done.
+</div>
+
+<p><strong>How DocuBrain configures it (and why each setting matters):</strong></p>
+<pre><span class="c-fn">celery_app.conf.update</span>(
+    broker_connection_retry_on_startup=<span class="c-key">True</span>,  <span class="c-com"># survive a slow-booting Redis</span>
+    task_acks_late=<span class="c-key">True</span>,        <span class="c-com"># ACK only AFTER the task finishes, not when picked up</span>
+    worker_prefetch_multiplier=<span class="c-num">1</span>,  <span class="c-com"># grab one task at a time — fair for long jobs</span>
+    task_track_started=<span class="c-key">True</span>,
+)
+<span class="c-fn">@celery_app.task</span>(bind=<span class="c-key">True</span>, max_retries=<span class="c-num">3</span>, default_retry_delay=<span class="c-num">10</span>)
+<span class="c-key">def</span> <span class="c-fn">process_document_task</span>(self, doc_id): ...</pre>
+
+<ul>
+  <li><strong><code>acks_late=True</code></strong> is the big one: if the worker <em>crashes mid-task</em>, the message isn't lost — it's redelivered to another worker. This gives <strong>at-least-once</strong> delivery.</li>
+  <li><strong><code>prefetch_multiplier=1</code></strong>: by default a worker greedily reserves many messages. For long jobs that means one worker hoards the queue while others idle. Setting it to 1 = "only take what you can work on now."</li>
+  <li><strong><code>max_retries=3</code></strong> with exponential backoff, plus a <em>special</em> 60-second retry when Gemini returns <code>ResourceExhausted</code> (quota hit) so the per-minute quota window resets.</li>
+</ul>
+
+<div class="box warn">
+  <div class="box-title">The connection-discipline pattern inside the worker (senior-level)</div>
+  The worker opens a DB session, reads the doc's metadata, marks it <code>processing</code>, and <strong>closes the session before any slow I/O</strong>. The 30–90s of S3+Gemini+Pinecone work happens holding <em>no</em> DB connection. Then a fresh short-lived session marks it <code>ready</code>. Why? A psycopg2 connection held idle for 90s while waiting on an external API will be killed by PgBouncer/Postgres timeouts, and the later commit would fail. "Acquire late, release early" keeps connections busy for milliseconds, not minutes.
+</div>
+
+<div class="qa">
+  <div class="qn">At-least-once vs exactly-once delivery?</div>
+  <div class="an">Exactly-once is effectively impossible in a distributed queue (the classic two-generals problem). Celery with <code>acks_late</code> gives at-least-once: a task may run twice if a worker dies after doing work but before ACKing. The correct response is to make tasks <strong>idempotent</strong> — re-processing the same <code>doc_id</code> just re-embeds and upserts to the same Pinecone IDs (<code>{doc_id}_{i}</code>), overwriting cleanly. Same end state, no duplicates.</div>
+  <div class="qn">Why Redis as the broker and not RabbitMQ?</div>
+  <div class="an">Redis was already in the stack for caching, so reusing it as the broker removes a whole component. RabbitMQ is a more feature-complete broker (complex routing, guaranteed delivery semantics) but it's overkill here — we have one task type and one queue. Fewer moving parts wins.</div>
+</div>
+
+<h2>2.9 Pinecone — the vector database</h2>
+<p><strong>What it is.</strong> A managed vector database. Instead of rows, it stores <strong>embeddings</strong> — high-dimensional numeric vectors (DocuBrain uses <strong>768 dimensions</strong>) — and does fast <strong>approximate nearest-neighbour</strong> search by cosine similarity.</p>
+
+<div class="box why">
+  <div class="box-title">What an embedding actually is</div>
+  An embedding model maps a piece of text to a point in 768-dimensional space such that <strong>semantically similar text lands close together</strong>. "How do I reset my password?" and "I forgot my login" end up near each other even though they share no words. The vector DB's job: given the query's vector, return the <em>k</em> stored chunk-vectors closest to it. That "closeness" is what makes retrieval <em>semantic</em>, not keyword-based.
+</div>
+
+<p><strong>How DocuBrain uses it.</strong> When a document is processed, each ~1500-char chunk becomes a vector with metadata <code>{text, source, doc_id, user_id}</code>, upserted with ID <code>{doc_id}_{i}</code>. At chat time the query is embedded and Pinecone is searched with <code>top_k=5</code> and a <strong>metadata filter <code>{user_id: ...}</code></strong> — this is the multi-tenant isolation: user A can never retrieve user B's chunks. The index uses <code>metric="cosine"</code> and is created automatically on first boot if missing.</p>
+
+<div class="qa">
+  <div class="qn">Why cosine similarity and not Euclidean distance?</div>
+  <div class="an">Cosine measures the <em>angle</em> between vectors, ignoring magnitude. For text embeddings, direction encodes meaning while magnitude is mostly noise (e.g. document length), so cosine is the standard choice. Two vectors pointing the same way score 1.0 regardless of length.</div>
+  <div class="qn">Could you replace Pinecone with something self-hosted?</div>
+  <div class="an">Yes — <code>pgvector</code> (a Postgres extension) would let me store vectors in the DB I already run, removing a managed dependency, at the cost of doing my own index tuning (IVFFlat/HNSW). Because all vector access is behind one infra client, it'd be a localized swap. Pinecone wins on zero-ops; pgvector wins on cost and data locality.</div>
+</div>
+
+<h2>2.10 Google Gemini — embeddings + the LLM</h2>
+<p><strong>What it is.</strong> Google's AI model family. DocuBrain uses it for <strong>two distinct jobs</strong>:</p>
+<ul>
+  <li><strong>Embeddings</strong> — <code>gemini-embedding-001</code> (768-dim) turns chunks and queries into vectors. Runs in the Celery worker (documents) and in the request (the query).</li>
+  <li><strong>Generation</strong> — <code>gemini-2.5-flash</code> is the chat LLM and the quiz/flashcard generator. "Flash" = the fast, cheap tier, which suits an interactive study tool.</li>
+</ul>
+<p><strong>Two clever uses worth mentioning:</strong></p>
+<ul>
+  <li><strong>Streaming chat</strong> via LangChain's <code>model.astream(prompt)</code> — tokens are pushed to the browser as they're generated (Server-Sent Events), so the user sees the answer typing out instead of waiting for the whole thing.</li>
+  <li><strong>Structured JSON output</strong> for quizzes: <code>response_mime_type="application/json"</code> forces Gemini to return parseable JSON, not prose with markdown fences — so we can deserialize it directly into quiz items.</li>
+</ul>
+
+<div class="box warn">
+  <div class="box-title">Defensive parsing of LLM output</div>
+  LLMs are non-deterministic, so the quiz parser <em>validates every item</em>: skip any question that doesn't have exactly 4 options, clamp an out-of-range <code>correct_answer</code> to 0, and if the whole response isn't valid JSON, return a clean <code>502</code> "AI returned an invalid response" rather than crashing. Never trust model output structurally.
+</div>
+
+<h2>2.11 LangChain — the LLM orchestration glue</h2>
+<p><strong>What it is.</strong> A framework for composing LLM apps. DocuBrain uses it narrowly and deliberately: only <code>ChatGoogleGenerativeAI</code> for the <strong>streaming chat</strong> integration, because LangChain's <code>.astream()</code> gives a clean async token iterator. The quiz path skips LangChain and calls the raw Gemini SDK directly (it needs the JSON-mode config). Using the right tool for each path — not forcing everything through one abstraction — is itself a good answer.</p>
+
+<h2>2.12 MinIO / AWS S3 — object storage ("the warehouse")</h2>
+<p><strong>What it is.</strong> S3 is AWS's object store for blobs. <strong>MinIO</strong> is an open-source, S3-API-compatible server you run locally — so dev uses MinIO in Docker and prod uses real S3 with <strong>zero code change</strong> (same SDK, just a different endpoint).</p>
+
+<div class="box why">
+  <div class="box-title">Why PDFs go to S3 and not into Postgres</div>
+  Databases are tuned for small, structured, frequently-queried rows — not multi-MB binary blobs. Storing files in Postgres bloats the DB, slows backups, wastes the buffer cache, and you pay DB pricing for dumb bytes. The pattern is universal: <strong>blobs in object storage, a pointer (the S3 key) in the database.</strong> DocuBrain stores <code>minio_path</code> on the <code>documents</code> row and the bytes in the bucket.
+</div>
+<p><strong>How DocuBrain uses it.</strong> Upload streams bytes straight into S3 via <code>io.BytesIO</code> (never touches local disk). The key is <code>{uuid}_{safe_filename}</code> to guarantee uniqueness. The MinIO SDK is synchronous, so every call is wrapped in <code>anyio.to_thread.run_sync</code> and guarded by the S3 <strong>circuit breaker</strong>. Bucket auto-creates on startup (<code>ensure_bucket</code>).</p>
+
+<h2>2.13 Nginx — the reverse proxy ("the gatekeeper")</h2>
+<p><strong>What it is.</strong> A high-performance, event-driven web server / reverse proxy. It's the <strong>only</strong> container that exposes ports to the internet — everything else lives on Docker's internal network. That alone is the right security posture.</p>
+<p><strong>The eight jobs DocuBrain's Nginx does</strong> (memorise these — it's a whole interview topic by itself):</p>
+<ol>
+  <li><strong>TLS termination</strong> — decrypt HTTPS once at the edge; plain HTTP inside the trusted Docker network.</li>
+  <li><strong>Rate limiting</strong> — a coarse per-IP limit (<code>limit_req_zone</code>) that rejects floods <em>before</em> Python ever wakes up. A <code>geo</code> block exempts localhost/Docker-bridge so load tests aren't throttled as one IP.</li>
+  <li><strong>Load balancing</strong> — <code>upstream</code> pool with <code>least_conn</code> (route to the worker with the fewest active connections — correct when endpoint latencies vary wildly from 1ms to 5s).</li>
+  <li><strong>Response buffering</strong> — Nginx reads the full response from FastAPI fast, frees the worker, then dribbles it out to a slow client itself. Slow clients can't tie up Python workers.</li>
+  <li><strong>Gzip</strong> — compresses JSON ~70–80% before it hits the wire.</li>
+  <li><strong>Real-IP forwarding</strong> — injects <code>X-Forwarded-For</code> so the app sees the true client IP through the proxy chain.</li>
+  <li><strong>WebSocket upgrade</strong> — explicitly forwards the <code>Upgrade</code>/<code>Connection</code> headers so the WS handshake (HTTP 101) succeeds, with a 1-hour read timeout for long-lived connections.</li>
+  <li><strong>Endpoint hardening</strong> — blocks <code>/metrics</code> from the public internet (403), exempts <code>/health</code> from rate limits, and adds security headers (<code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>, etc.).</li>
+</ol>
+
+<div class="box key">
+  <div class="box-title">Why <code>least_conn</code> beats round-robin here</div>
+  Round-robin sends request N to worker (N mod k) blindly. But DocuBrain's endpoints range from <code>/health</code> (~1ms) to <code>/quiz/generate</code> (~5s). Round-robin would keep piling requests on a worker already stuck on three quiz generations. <code>least_conn</code> sees the queued connections and routes around the busy worker — much better tail latency under mixed load.
+</div>
+
+<div class="box why">
+  <div class="box-title">SSE/streaming + buffering = the gotcha</div>
+  Buffering is great for normal JSON but <strong>breaks streaming</strong> — for chat SSE you want each token flushed immediately, not buffered. The chat endpoint sets <code>X-Accel-Buffering: no</code> in its response headers to tell Nginx "don't buffer this one." Knowing this exception is a strong signal.
+</div>
+
+<div class="qa">
+  <div class="qn">Why is Nginx event-driven and why does that matter?</div>
+  <div class="an">Each Nginx worker uses Linux <code>epoll</code> to watch thousands of sockets in one process — O(1) notification when a socket is ready, instead of one thread per connection. That's why a single Nginx box holds 10k+ idle connections cheaply, which is exactly what you want fronting slow mobile clients.</div>
+</div>
+
+<h2>2.14 Docker &amp; docker-compose — packaging and orchestration</h2>
+<p><strong>What it is.</strong> Docker packages the app + its exact dependencies into an image that runs identically everywhere. docker-compose declares the whole multi-container stack in one YAML file.</p>
+<p><strong>Strong choices DocuBrain makes:</strong></p>
+<ul>
+  <li><strong>Multi-stage build</strong> — a <code>builder</code> stage compiles dependencies (needs gcc, libpq-dev); the <code>runtime</code> stage copies only the installed packages, so the shipped image has no compilers. Smaller image, smaller attack surface.</li>
+  <li><strong>Non-root user</strong> — the container runs as <code>appuser</code>, not root. If the app is compromised, the blast radius is limited.</li>
+  <li><strong>Healthchecks + <code>depends_on: condition: service_healthy</code></strong> — the backend only starts after Postgres, Redis, and MinIO report healthy. No race-condition crashes on boot.</li>
+  <li><strong>Layer caching</strong> — <code>requirements.txt</code> is copied and installed <em>before</em> the app code, so a code change doesn't bust the dependency layer. Faster rebuilds.</li>
+</ul>
+
+<div class="qa">
+  <div class="qn">Container vs VM?</div>
+  <div class="an">A VM virtualises hardware and ships a whole guest OS (GBs, slow boot). A container shares the host kernel and isolates only the process/filesystem/network namespaces (MBs, boots in ms). For packaging a stateless app service, containers are far lighter — you run many per host.</div>
+  <div class="qn">Why multi-stage builds?</div>
+  <div class="an">To keep build-time tools (gcc, dev headers) out of the runtime image. Smaller image = faster pulls/deploys and a smaller security surface — no compiler for an attacker to use.</div>
+</div>
+
+<h2>2.15 The auth stack — JWT, passlib/bcrypt, python-jose</h2>
+<p>DocuBrain implements a modern <strong>two-token</strong> auth scheme. The pieces:</p>
+<table>
+  <tr><th>Library</th><th>Job</th></tr>
+  <tr><td><code>passlib</code> + <code>bcrypt</code></td><td>Hash passwords. bcrypt is a deliberately <em>slow</em>, salted hash — brute-forcing stolen hashes is computationally expensive.</td></tr>
+  <tr><td><code>python-jose</code></td><td>Encode/decode JWTs (HS256).</td></tr>
+  <tr><td><code>python-multipart</code></td><td>Parse the OAuth2 form-login body and file uploads.</td></tr>
+</table>
+
+<div class="box key">
+  <div class="box-title">The two-token pattern — the centrepiece security answer</div>
+  <strong>Access token:</strong> a short-lived (15-min) JWT returned in the response body, sent as <code>Authorization: Bearer</code>. Stateless — the server verifies the signature, no DB lookup needed.<br><br>
+  <strong>Refresh token:</strong> a long-lived (7-day) cryptographically-random string (<em>not</em> a JWT) stored in Redis and delivered as an <strong>httpOnly cookie</strong> (JavaScript can't read it → immune to XSS token theft). When the access token expires, the browser silently calls <code>/auth/refresh</code>; the cookie is sent automatically, Redis is checked, and a fresh pair is issued.<br><br>
+  <strong>Rotation = theft detection:</strong> each refresh <em>deletes</em> the old token from Redis before issuing a new one. If a stolen token is replayed after the real user already rotated, the lookup misses → 401. The breach is detected.
+</div>
+
+<div class="qa">
+  <div class="qn">Why is the access token a JWT but the refresh token isn't?</div>
+  <div class="an">The access token is verified on <em>every</em> request — making it a self-contained, signature-verifiable JWT avoids a DB hit each time (stateless). The refresh token is used rarely (every 15 min) and <em>must be revocable</em>, so it's a random opaque key looked up in Redis — deleting the key instantly kills the session. You can't revoke a pure JWT without extra infrastructure; that's the whole point of the split.</div>
+  <div class="qn">Where do you store tokens client-side, and why?</div>
+  <div class="an">Refresh token in an <strong>httpOnly, Secure, SameSite cookie</strong> — unreadable by JS, so XSS can't steal it. The short-lived access token lives in memory/JS; even if leaked it expires in 15 minutes. This splits the XSS risk (cookie) from the CSRF risk (bearer header) instead of being vulnerable to both.</div>
+  <div class="qn">What's actually inside the JWT?</div>
+  <div class="an">Header (alg=HS256), payload claims (<code>sub</code>=email, <code>user_id</code>, <code>exp</code>), and an HMAC signature over the first two using the server's <code>SECRET_KEY</code>. Anyone can <em>read</em> the payload (it's just base64) — so never put secrets in it — but nobody can forge the signature without the key. <code>get_current_user</code> decodes it, then loads the live <code>User</code> from the DB by <code>user_id</code>.</div>
+</div>
+
+<h2>2.16 Prometheus — metrics</h2>
+<p><strong>What it is.</strong> A pull-based metrics system. Your app exposes <code>/metrics</code> in a text format; Prometheus scrapes it on an interval and stores time-series data you can graph/alert on.</p>
+<p><strong>How DocuBrain uses it.</strong> The middleware records three metric types on every request: a <strong>Counter</strong> (<code>http_requests_total</code> by method/path/status), a <strong>Histogram</strong> (request latency, bucketed 50ms→10s to cover both fast CRUD and slow AI calls), and a <strong>Gauge</strong> (requests in flight). Crucially, the label uses the <em>route template</em> (<code>/documents/{doc_id}</code>) not the real path (<code>/documents/42</code>) — otherwise every ID becomes a new time series and you get "cardinality explosion."</p>
+
+<div class="qa">
+  <div class="qn">Counter vs Gauge vs Histogram?</div>
+  <div class="an"><strong>Counter</strong> only goes up (total requests). <strong>Gauge</strong> goes up and down (in-flight requests, memory). <strong>Histogram</strong> buckets observations so you can compute percentiles (p95 latency) server-side. Pick by what the number does over time.</div>
+  <div class="qn">Push vs pull metrics — why is Prometheus pull?</div>
+  <div class="an">Pull means Prometheus controls scrape timing and can detect a target that's <em>down</em> (scrape fails) — a push model can't tell "healthy but quiet" from "dead." Pull also avoids every instance needing to know the metrics backend's address. For ephemeral jobs that die before a scrape, Prometheus offers a Pushgateway as the exception.</div>
+</div>
+
+<h2>2.17 Terraform — infrastructure as code</h2>
+<p><strong>What it is.</strong> A declarative tool to define cloud infrastructure in code. You describe the <em>desired</em> state (a VPC, a subnet, an EC2 box, an S3 bucket, IAM roles); Terraform diffs it against reality and makes the minimum changes to converge.</p>
+<p><strong>What DocuBrain provisions.</strong> A complete AWS footprint: a <strong>VPC</strong> (isolated network) → <strong>Internet Gateway</strong> → public <strong>subnet</strong> → <strong>route table</strong> → <strong>security groups</strong> (firewall) → an <strong>EC2</strong> instance (gp3 encrypted disk) with a <code>user_data</code> boot script that installs Docker and launches the stack → an <strong>Elastic IP</strong> (stable address for DNS) → an <strong>S3 bucket</strong> + <strong>IAM instance profile</strong> so the box can reach S3 without hard-coded keys.</p>
+
+<div class="box why">
+  <div class="box-title">Why IaC instead of clicking in the AWS console</div>
+  The infrastructure is <strong>reproducible, reviewable, and version-controlled</strong>. You can destroy and recreate the entire environment identically, code-review a network change in a PR, and never suffer "it works because someone clicked something nobody documented." <code>default_tags</code> stamp every resource for cost tracking; <code>prevent_destroy</code> guards the prod server from an accidental wipe.</p>
+</div>
+
+<div class="qa">
+  <div class="qn">Terraform state — what is it and why does it matter?</div>
+  <div class="an">Terraform records what it created in a <em>state file</em> that maps your code to real resource IDs. For a team you store it remotely (S3 + a DynamoDB lock table) so two people can't apply simultaneously and corrupt it. Locally it's a local file — fine solo, dangerous in a team.</div>
+  <div class="qn">Declarative vs imperative infra?</div>
+  <div class="an">Imperative (a bash script) says "do these steps." Declarative (Terraform) says "this is the end state I want" and lets the tool compute the diff. Declarative is idempotent — running it twice changes nothing the second time — which is what you want for infrastructure.</div>
+</div>
+
+<h2>2.18 GitHub Actions — the CI/CD pipeline</h2>
+<p><strong>What it is.</strong> GitHub's built-in automation. On every push/PR it spins up fresh Ubuntu runners and executes your pipeline. DocuBrain's pipeline is a classic sequential gate:</p>
+
+<div class="flow">
+  <div class="step"><span class="num">1</span><strong>Lint</strong> (Ruff) — cheapest check first; catches typos/unused imports in ~5s before wasting time on tests.</div>
+  <div class="step"><span class="num">2</span><strong>Test</strong> (pytest) — runs against <em>real</em> Postgres + Redis <strong>service containers</strong>, after applying <code>alembic upgrade head</code> (so migrations themselves are tested). Only runs if lint passed.</div>
+  <div class="step"><span class="num">3</span><strong>Build</strong> — multi-stage Docker image, tagged with the git SHA <em>and</em> <code>latest</code>, pushed to a registry with layer cache. Only on push to <code>main</code>, never on PRs.</div>
+  <div class="step"><span class="num">4</span><strong>Deploy</strong> — SSH to the server, pull the new image, stop-old/start-new swap, then a health check that rolls back on failure.</div>
+  <div class="step"><span class="num">5</span><strong>Post-deploy smoke test</strong> — k6 hits the <em>live</em> production URL to catch the bugs that only appear in prod (wrong env var, missing secret).</div>
+</div>
+
+<div class="box key">
+  <div class="box-title">Two ideas interviewers love here</div>
+  <strong>Tag images with the git SHA</strong>, not just <code>latest</code> — that's what makes rollbacks deterministic ("redeploy <code>:a3f9d2c</code>"). And <strong>the SHA tag is how deploy knows exactly what shipped.</strong> Second: <strong>fail fast / cheap-checks-first</strong> ordering — lint (5s) before test (2min) before build before deploy. You never burn 2 minutes of CI to fail on a missing comma.
+</div>
+
+<div class="qa">
+  <div class="qn">Difference between CI and CD?</div>
+  <div class="an"><strong>CI</strong> (Continuous Integration) = automatically lint/test/build every change so <code>main</code> is always known-good. <strong>CD</strong> (Continuous Delivery/Deployment) = automatically ship that known-good artifact to production. DocuBrain does both: the first three jobs are CI, the last two are CD.</div>
+  <div class="qn">Why test against real Postgres/Redis containers instead of mocks?</div>
+  <div class="an">Mocks test that you called a function, not that the SQL is valid or the migration applies. Service containers give a real DB so tests catch genuine integration bugs — a malformed query, a broken migration — for a few seconds of extra runtime.</div>
+</div>
+
+<h2>2.19 k6 — load &amp; performance testing</h2>
+<p><strong>What it is.</strong> A modern load-testing tool: you write the test in JavaScript, it runs many <strong>virtual users (VUs)</strong> concurrently from a single fast Go binary, and asserts on <strong>thresholds</strong> (e.g. "p95 latency &lt; 200ms, error rate &lt; 1%"). Breach a threshold → non-zero exit → CI fails.</p>
+<p><strong>How DocuBrain uses it.</strong> Three suites: <strong>smoke</strong> (1 VU, 30s sanity), <strong>load</strong> (ramp to 50 VUs over 5 min — the headline benchmark), and <strong>spike</strong> (200 VUs to deliberately trip circuit breakers and watch recovery). The banked load-test result:</p>
+
+<div class="box key">
+  <div class="box-title">The numbers to quote</div>
+  <strong>50 concurrent VUs · p95 latency 31 ms · 0% error rate · 26.5 req/s sustained.</strong> Run on the full Dockerised stack (Nginx → FastAPI → PgBouncer → Postgres + Redis). The point isn't the raw throughput on a laptop — it's that the system stayed correct and fast under sustained concurrency with zero errors.
+</div>
+
+<div class="qa">
+  <div class="qn">What's a percentile and why p95/p99 instead of average?</div>
+  <div class="an">Averages hide tail pain. If 95 requests are 20ms and 5 are 5s, the average looks fine but 1-in-20 users has a terrible time. p95 = "95% of requests were faster than this." Tail latency is what users actually feel, so SLOs are written on p95/p99, not the mean.</div>
+  <div class="qn">What does a spike test prove that a load test doesn't?</div>
+  <div class="an">Load tests verify steady-state. Spike tests verify <em>resilience</em> under sudden overload: do rate limiters return clean 429s? Do circuit breakers trip and fail fast instead of cascading? Does the system <em>recover</em> when the spike ends? It tests the failure machinery, not the happy path.</div>
+</div>
+
+<!-- ════════════════════ SECTION 3 ════════════════════ -->
+<div class="page-break"></div>
+<span class="section-tag">Section 3</span>
+<h1 class="section">Endpoint-by-Endpoint Deep Flows</h1>
+<p class="lead">For each route: the exact path data takes, the design decisions baked in, and the gotchas already handled.</p>
+
+<h2>3.1 Auth — <span class="mono">/auth/*</span></h2>
+
+<h3>POST /auth/register</h3>
+<div class="flow">
+  <div class="step"><span class="num">1</span>Pydantic <code>UserCreate</code> validates <code>email</code> (real <code>EmailStr</code> check) and <code>password</code> (8–128 chars). Bad input → 422 before any code runs.</div>
+  <div class="step"><span class="num">2</span><code>auth_service.register_user</code> checks the email isn't taken (<code>get_by_email</code>) → 400 if it is.</div>
+  <div class="step"><span class="num">3</span>Password is hashed with <strong>bcrypt</strong> (salted, slow) — the plaintext is never stored.</div>
+  <div class="step"><span class="num">4</span>User row is created; an <strong>access JWT</strong> (15-min) and a <strong>random refresh token</strong> (7-day) are minted. The refresh token is stored in Redis keyed by its value.</div>
+  <div class="step"><span class="num">5</span>Refresh token is set as an <strong>httpOnly cookie</strong> scoped to <code>/auth</code>; access token returns in the JSON body.</div>
+  <div class="step"><span class="num">6</span>A <code>BackgroundTask</code> writes an audit-log entry <em>after</em> the response is sent.</div>
+</div>
+
+<h3>POST /auth/login</h3>
+<p>Uses FastAPI's <code>OAuth2PasswordRequestForm</code> (form-encoded <code>username</code>/<code>password</code>, the OAuth2 standard). Looks up the user, verifies the password with <code>bcrypt.verify</code>, and — critically — returns the <strong>same generic 401 "Incorrect email or password"</strong> whether the email doesn't exist or the password is wrong.</p>
+<div class="box warn">
+  <div class="box-title">Why the error message is deliberately vague</div>
+  Distinct messages ("no such user" vs "wrong password") leak which emails are registered — a <strong>user-enumeration</strong> vulnerability an attacker uses to build target lists. One generic message closes it.
+</div>
+
+<h3>POST /auth/refresh &amp; POST /auth/logout</h3>
+<p><strong>Refresh:</strong> reads the httpOnly cookie (no JS involved), atomically pops the old token from Redis (read-then-delete = rotation), validates the user still exists, and issues a fresh pair. Replaying a rotated token → cache miss → 401 (theft detected). <strong>Logout:</strong> deletes the refresh token from Redis (instant server-side revocation) and clears the cookie. The access token remains valid until its ≤15-min expiry — an accepted trade-off of stateless tokens.</p>
+
+<h2>3.2 Documents — <span class="mono">/upload, /documents</span></h2>
+
+<h3>POST /upload/ — the most defensive endpoint</h3>
+<div class="flow">
+  <div class="step"><span class="num">1</span><strong>Rate-limit gate first:</strong> <code>upload_rate_limit</code> (10/hour) runs as a dependency <em>before</em> any I/O — expensive AI processing is protected up front.</div>
+  <div class="step"><span class="num">2</span>Validate filename (present, ≤255 chars).</div>
+  <div class="step"><span class="num">3</span>Read bytes; reject if &gt;20 MB or empty.</div>
+  <div class="step"><span class="num">4</span><strong>Magic-byte check:</strong> <code>python-magic</code> inspects the actual file content (<code>application/pdf</code>?) — not the file extension, which is trivially spoofed. A <code>.pdf</code> that's really an executable is rejected.</div>
+  <div class="step"><span class="num">5</span>Stream bytes to S3 under key <code>{uuid}_{name}</code>, guarded by the <strong>S3 circuit breaker</strong> (→ 503 if storage is down).</div>
+  <div class="step"><span class="num">6</span>Insert the <code>documents</code> row with <code>status="pending"</code>.</div>
+  <div class="step"><span class="num">7</span><strong><code>process_document_task.delay(doc.id)</code></strong> — hand off to Celery and return immediately. Invalidate the doc-list cache. Audit in the background.</div>
+</div>
+
+<div class="box key">
+  <div class="box-title">The key insight: upload returns in milliseconds</div>
+  The user gets an instant response with the document marked "pending/processing." All the slow work (embedding) happens in the worker. The browser learns it's done via a WebSocket push. This is the <strong>async-handoff pattern</strong> and it's the single most important flow in the app.
+</div>
+
+<h3>GET /documents/ &amp; DELETE /documents/{id}</h3>
+<p><strong>List:</strong> cache-aside — check Redis (30s TTL), miss → query Postgres ordered by upload date, write back. Only the default page (skip=0, limit=100) is cached. <strong>Delete:</strong> a true <em>cascade purge</em> — removes the S3 object, deletes all the document's vectors from Pinecone (<code>filter={doc_id}</code>), deletes the DB row, and invalidates the cache. Ownership is checked first (<code>doc.user_id == current_user.id</code>) → 404 if not yours (404 not 403, so you can't even confirm the doc exists).</p>
+
+<h2>3.3 The Celery worker pipeline — <span class="mono">process_document_task</span></h2>
+<p>This is where the heavy lifting lives. Four phases with strict connection discipline:</p>
+<div class="flow">
+  <div class="step"><span class="num">1</span><strong>Short DB session:</strong> read <code>minio_path</code>, <code>filename</code>, <code>user_id</code>; set <code>status="processing"</code>; commit; <strong>close the session.</strong></div>
+  <div class="step"><span class="num">2</span><strong>Slow I/O, no DB held:</strong> download PDF from S3 → extract text with <code>pypdf</code> → chunk (1500 chars, 100 overlap) → embed every chunk via Gemini (throttled ~10/s) → upsert vectors to Pinecone in batches of 100.</div>
+  <div class="step"><span class="num">3</span><strong>Fresh short session:</strong> set <code>status="ready"</code> + a 200-char summary.</div>
+  <div class="step"><span class="num">4</span><strong>Notify:</strong> <code>PUBLISH</code> a <code>document.ready</code> message to Redis channel <code>doc:ready:{user_id}</code> → the WebSocket layer pushes it to the browser.</div>
+</div>
+
+<div class="box warn">
+  <div class="box-title">Failure handling baked in</div>
+  Gemini quota error (<code>ResourceExhausted</code>) → retry after <strong>60s</strong> (lets the per-minute window reset), keep status as "processing." Any other error → set "failed" and retry (max 3, exponential backoff). Because re-running uses the same deterministic Pinecone IDs, retries are <strong>idempotent</strong> — no duplicate vectors.
+</div>
+
+<div class="box why">
+  <div class="box-title">Why chunk + overlap?</div>
+  LLMs and embedding models have a context limit, and retrieval is sharper on small focused passages than on a whole document. <strong>1500-char chunks</strong> keep each vector semantically tight; the <strong>100-char overlap</strong> stops a sentence that straddles a chunk boundary from losing its meaning in both halves.
+</div>
+
+<h2>3.4 Chat — <span class="mono">/chat/*</span> and the streaming RAG flow</h2>
+<p>Sessions are simple CRUD (create / list / get messages / delete), with the session list cached in Redis for 60s. The interesting one is the stream:</p>
+
+<h3>POST /chat/sessions/{id}/stream — RAG over SSE</h3>
+<div class="flow">
+  <div class="step"><span class="num">1</span>Verify the session belongs to the user. If it's still titled "New Chat", set its title to the first message.</div>
+  <div class="step"><span class="num">2</span>Persist the user's message; load the last 10 messages as conversation history.</div>
+  <div class="step"><span class="num">3</span><strong><code>await db.commit()</code> — release the DB connection back to the pool BEFORE streaming.</strong> The 10–30s LLM stream holds no DB connection.</div>
+  <div class="step"><span class="num">4</span><strong>RAG:</strong> embed the query (Gemini) → Pinecone <code>top_k=5</code> search filtered by <code>user_id</code> → join the retrieved chunks into a context block.</div>
+  <div class="step"><span class="num">5</span>Build the prompt (context + history + question) and <code>astream</code> Gemini tokens, yielding each as an SSE <code>data:</code> frame to the browser in real time.</div>
+  <div class="step"><span class="num">6</span>After the stream, append a <code>[SOURCES]</code> event (which documents were cited), then <code>[DONE]</code>. A fresh DB connection persists the full assistant reply.</div>
+</div>
+
+<div class="box key">
+  <div class="box-title">The two senior-level details in this one endpoint</div>
+  <strong>(1) Commit-before-slow-IO:</strong> an <code>AsyncSession</code> holds an asyncpg connection from its first query until commit/close. If you held it through a 30s LLM stream, that connection is dead weight — and asyncpg will close it idle, making the later write fail. Committing first returns it to the pool; the session transparently leases a fresh one for the final insert.<br><br>
+  <strong>(2) Every external call is wrapped in a circuit breaker.</strong> Gemini and Pinecone each have one — if Gemini is down, the breaker trips and users get a fast, clean "temporarily unavailable" instead of 30s timeouts piling up.
+</div>
+
+<div class="box why">
+  <div class="box-title">SSE vs WebSocket — why SSE for chat?</div>
+  Chat streaming is <strong>one-directional</strong> (server → client, token by token). Server-Sent Events is exactly that: a long-lived HTTP response that flushes chunks, with auto-reconnect built into the browser's <code>EventSource</code>. It's simpler than a full-duplex WebSocket and rides normal HTTP/Nginx. We reserve WebSockets for the genuinely push-style notification channel.
+</div>
+
+<h2>3.5 Quiz — <span class="mono">/quiz/*</span></h2>
+<h3>POST /quiz/generate</h3>
+<div class="flow">
+  <div class="step"><span class="num">1</span>Validate ownership + status is <code>ready</code> (else 400 "still processing").</div>
+  <div class="step"><span class="num">2</span><strong>Capture <code>minio_path</code> as a string, then <code>await db.commit()</code></strong> — same release-the-connection pattern before the slow path.</div>
+  <div class="step"><span class="num">3</span>Download PDF (S3 breaker) → extract text → cap at 500k chars (~125k tokens, within Gemini Flash's 1M window).</div>
+  <div class="step"><span class="num">4</span>Build a quiz or flashcard prompt; call Gemini in <strong>JSON mode</strong> (Gemini breaker).</div>
+  <div class="step"><span class="num">5</span><strong>Defensively parse:</strong> drop malformed items, clamp bad indices, 502 on invalid JSON.</div>
+  <div class="step"><span class="num">6</span>Persist quiz + items in one transaction; <code>selectinload</code> the items for the response.</div>
+</div>
+
+<h3>POST /quiz/{id}/attempt — scoring</h3>
+<p>Answers arrive as a <strong>flat ordered list</strong> of 0-based option indices (<code>null</code> = skipped). The service sorts items by <code>order_index</code>, zips them with the answers, counts matches against <code>correct_answer</code>, stores the attempt, and returns a per-question <strong>breakdown</strong> (your answer, correct answer, explanation). Flashcard "attempts" store <code>score=null</code> — a review has no right/wrong.</p>
+
+<div class="box why">
+  <div class="box-title">One table, two content types (a clean schema choice)</div>
+  <code>quiz_items</code> serves both quizzes and flashcards via nullable columns: a quiz item fills <code>content_front</code>+<code>options</code>+<code>correct_answer</code>; a flashcard fills <code>content_front</code>+<code>content_back</code> and leaves the quiz columns null. One table, one set of queries, no awkward inheritance.
+</div>
+
+<h2>3.6 Progress &amp; Analytics — read-replica endpoints</h2>
+<p>Both <code>GET /progress/stats</code> and <code>GET /analytics/dashboard</code> use <code>Depends(get_read_db)</code> — they route to the <strong>read replica</strong> because a few ms of replication lag is fine for historical aggregates. Analytics runs five SQL aggregate queries (counts + a <code>DATE_TRUNC</code> weekly-trend + a top-documents join) — <strong>all aggregation is pushed to Postgres</strong>, never fetched row-by-row into Python. The queries run sequentially (an <code>AsyncSession</code> wraps one connection, so concurrent queries on it would deadlock — a subtle correctness note).</p>
+
+<h2>3.7 WebSocket — <span class="mono">/ws/notifications</span></h2>
+<div class="flow">
+  <div class="step"><span class="num">1</span><strong>Auth before accept:</strong> the JWT arrives as a <code>?token=</code> query param (browsers can't set headers on WS). Invalid → close with policy-violation, never opening the socket.</div>
+  <div class="step"><span class="num">2</span>Accept, then <code>SUBSCRIBE</code> to Redis channel <code>doc:ready:{user_id}</code>.</div>
+  <div class="step"><span class="num">3</span>Run <strong>two concurrent tasks</strong>: one forwards Redis messages → browser; one reads incoming frames to detect disconnect.</div>
+  <div class="step"><span class="num">4</span><code>asyncio.wait(FIRST_COMPLETED)</code> — whichever finishes first (client leaves or Redis dies) tears down the other and cleans up the subscription. No zombie connections.</div>
+</div>
+<div class="box key">
+  <div class="box-title">How the worker reaches the browser without sharing memory</div>
+  The Celery worker and the API are <strong>separate processes</strong> — they can't call each other directly. Redis <strong>Pub/Sub</strong> is the bridge: the worker <code>PUBLISH</code>es to a per-user channel; whichever API process holds that user's WebSocket is <code>SUBSCRIBE</code>d and relays the message. This is the decoupled, horizontally-scalable way to do real-time fan-out.
+</div>
+
+<!-- ════════════════════ SECTION 4 ════════════════════ -->
+<div class="page-break"></div>
+<span class="section-tag">Section 4</span>
+<h1 class="section">Cross-Cutting Patterns</h1>
+<p class="lead">These are the patterns that separate "I built a CRUD app" from "I built a resilient backend." Each is a likely deep-dive.</p>
+
+<h2>4.1 The Circuit Breaker</h2>
+<p><strong>The problem.</strong> When an external dependency (Gemini, Pinecone, S3) goes slow or down, naive code keeps calling it. Every call waits the full timeout, threads pile up, and the failure <em>cascades</em> back through your system. One sick dependency takes down the whole app.</p>
+<p><strong>The pattern.</strong> A state machine that "fails fast" once a dependency looks broken:</p>
+<pre>   <span class="c-key">CLOSED</span>  ──[5 consecutive failures]──▶  <span class="c-key">OPEN</span>  ──[wait recovery_timeout]──▶  <span class="c-key">HALF-OPEN</span>
+     ▲                                                                          │
+     └──────────────────────[test call succeeds]───────────────────────────────┘
+        (HALF-OPEN → back to OPEN immediately if the test call fails)</pre>
+<ul>
+  <li><strong>CLOSED</strong> — healthy; calls pass through, failures are counted.</li>
+  <li><strong>OPEN</strong> — tripped; calls are rejected <em>instantly</em> with <code>CircuitOpenError</code> → the service returns a clean <strong>503</strong>. No network call, no waiting. The dependency gets breathing room to recover.</li>
+  <li><strong>HALF-OPEN</strong> — after the cooldown, one probe call is allowed. Success → CLOSED (recovered). Failure → straight back to OPEN.</li>
+</ul>
+<p>DocuBrain runs <strong>three independent breakers</strong>, tuned per service: Gemini (threshold 5, 60s recovery — AI APIs recover slowly), Pinecone (5, 30s), S3 (3, 20s — storage errors are usually infra-level, fail faster).</p>
+<div class="box warn">
+  <div class="box-title">The concurrency detail in the implementation</div>
+  The breaker holds an <code>asyncio.Lock</code> only while reading/writing its <em>state</em> — never across the actual network call. Holding the lock during the call would serialize every request through that breaker and destroy async concurrency. Lock for the bookkeeping, release before the await. That's the kind of detail that signals you actually wrote it.
+</div>
+
+<h2>4.2 Two-Tier Rate Limiting</h2>
+<p>DocuBrain throttles at <strong>two layers</strong>, and they defend against different things:</p>
+<table>
+  <tr><th>Layer</th><th>Keyed by</th><th>Defends against</th><th>Runs…</th></tr>
+  <tr><td><strong>Nginx</strong> (<code>limit_req_zone</code>)</td><td>client IP</td><td>volumetric floods / DDoS from one IP</td><td>at the edge, before Python wakes</td></tr>
+  <tr><td><strong>App / Redis</strong> (<code>INCR</code>)</td><td>authenticated user_id</td><td>one logged-in user abusing expensive endpoints</td><td>as a FastAPI dependency</td></tr>
+</table>
+<p>The app tier has two limits: <strong>100 req/min</strong> general, and a strict <strong>10 uploads/hour</strong> on the expensive AI path. Why both tiers? Nginx doesn't know <em>who</em> a request is (no JWT decode at the edge); the app doesn't see floods cheaply (they'd still spin up a request). IP-level at the edge + user-level in the app = defense in depth.</p>
+
+<h2>4.3 RBAC — a centralised policy layer</h2>
+<p>Authorization isn't scattered as <code>if user.role == "admin"</code> checks across the codebase — those rot and drift. Instead there's a single <strong>policy map</strong> in <code>core/rbac.py</code>: role → set of permissions (<code>"documents:read_own"</code>, <code>"chat:write"</code>, …). Enforcement is a FastAPI dependency factory, <code>require_permission("...")</code>, that raises 403 if the user's role lacks the permission.</p>
+<div class="box key">
+  <div class="box-title">Why this design is the "right" RBAC answer</div>
+  <strong>One source of truth.</strong> To add a role or change what it can do, you edit one dictionary — every enforcement point updates automatically. Permissions are named <code>resource:action</code>, the industry convention. Adding authorization to a new endpoint is one line: <code>Depends(require_permission("documents:upload"))</code>. This is the difference between RBAC-as-a-pattern and authorization-as-spaghetti.
+</div>
+
+<h2>4.4 The Append-Only Audit Log</h2>
+<p>A dedicated <code>audit_logs</code> table records security-relevant actions (login, upload, delete, chat query) with <code>user_id</code>, action, resource id, JSONB metadata, IP, and timestamp. Two deliberate design choices:</p>
+<ul>
+  <li><strong>Write-only by design</strong> — the service exposes <em>only</em> a <code>log()</code> function. No update, no delete. The log is immutable, which is what makes it trustworthy for forensics. <code>ON DELETE SET NULL</code> means audit rows survive even after the user is deleted.</li>
+  <li><strong>Written in a BackgroundTask</strong> — it runs <em>after</em> the response is sent, on its own DB session, and <strong>any failure is swallowed</strong> (logged, never raised). A slow or failing audit write must never affect the user's request or its latency.</li>
+</ul>
+
+<h2>4.5 Observability — the three pillars, all present</h2>
+<table>
+  <tr><th>Pillar</th><th>In DocuBrain</th><th>Answers the question…</th></tr>
+  <tr><td><strong>Metrics</strong></td><td>Prometheus counter/histogram/gauge via middleware</td><td>"Is it healthy <em>right now</em>? What's p95?"</td></tr>
+  <tr><td><strong>Logs</strong></td><td>Structured single-line JSON, one per request</td><td>"What exactly happened on this request?"</td></tr>
+  <tr><td><strong>Traces</strong></td><td>Correlation IDs propagated end-to-end (the foundation for full tracing)</td><td>"Follow one request across every component."</td></tr>
+</table>
+<div class="box key">
+  <div class="box-title">Correlation IDs + ContextVar — the elegant bit</div>
+  Middleware reads or generates an <code>X-Correlation-ID</code> and stores it in a Python <strong>ContextVar</strong> — the async-safe equivalent of thread-local storage. Every log line emitted anywhere in that request's async call-tree automatically picks up the same ID via the JSON formatter, with zero code threading it through function arguments. The ID is echoed back in the response header so a client (or Nginx, or a gateway) can correlate end-to-end. This is the seed of distributed tracing.
+</div>
+
+<h2>4.6 The Read Replica &amp; Eventual Consistency</h2>
+<p>DocuBrain supports an optional read replica: heavy read-only endpoints (analytics, progress) use <code>get_read_db()</code>, which routes to a replica engine. If <code>READ_REPLICA_URL</code> isn't set, it transparently falls back to the primary — so the same code runs in dev (one DB) and prod (primary + replica) with no branching.</p>
+<div class="box warn">
+  <div class="box-title">The consistency rule you must articulate</div>
+  Replicas lag the primary by milliseconds (asynchronous replication). So the rule: <strong>read-your-writes queries stay on the primary</strong> (e.g. listing documents right after an upload — you must see it), while <strong>staleness-tolerant aggregates go to the replica</strong> (a dashboard that's 50ms behind is fine). Knowing <em>which</em> reads can tolerate lag is the whole skill — it's a direct application of eventual consistency.
+</div>
+
+<h2>4.7 The RAG Pipeline, End to End</h2>
+<p>Tying the AI flow together in one place, because "explain your RAG pipeline" is the headline AI question:</p>
+<div class="flow">
+  <div class="step"><span class="num">1</span><strong>Ingest (offline, in the worker):</strong> PDF → text → 1500-char overlapping chunks → Gemini embeddings (768-dim) → upsert to Pinecone with <code>{text, doc_id, user_id}</code> metadata.</div>
+  <div class="step"><span class="num">2</span><strong>Retrieve (online, per query):</strong> embed the user's question → Pinecone cosine search <code>top_k=5</code>, filtered by <code>user_id</code> for tenant isolation.</div>
+  <div class="step"><span class="num">3</span><strong>Augment:</strong> stuff the retrieved chunks + recent chat history into a structured prompt that instructs the model to answer <em>only</em> from the provided context.</div>
+  <div class="step"><span class="num">4</span><strong>Generate:</strong> stream Gemini's answer token-by-token over SSE, then report which source documents were used.</div>
+</div>
+<div class="box why">
+  <div class="box-title">Why RAG instead of fine-tuning?</div>
+  Fine-tuning bakes knowledge into model weights — expensive, slow to update, and it can't cite sources. RAG keeps knowledge in an external store you can update instantly (upload a new PDF and it's searchable in seconds), grounds answers in real passages to reduce hallucination, and lets the model <strong>cite</strong> what it used. For a per-user document tool, RAG is the only sensible choice — you can't fine-tune a model per user.
+</div>
+
+<!-- ════════════════════ SECTION 5 ════════════════════ -->
+<div class="page-break"></div>
+<span class="section-tag">Section 5</span>
+<h1 class="section">The Roadmap — What Was Built &amp; Why</h1>
+<p class="lead">DocuBrain was hardened in phases, each one a recognised production concern. This is the "show me you understand the journey from prototype to production" narrative.</p>
+
+<h2>Phase 0 — Foundations &amp; Hardening <span class="pill green">Complete</span></h2>
+<ul>
+  <li><strong>Removed dead weight</strong> (a legacy Jitsi integration) and slimmed dependencies from ~186 → 17 direct packages after an audit. Fewer deps = smaller attack surface and faster builds.</li>
+  <li><strong>Secrets out of code</strong> — every credential moved to environment variables, validated at startup (the app crashes loudly if a required secret is missing, rather than failing mysteriously later).</li>
+  <li><strong>Alembic migrations</strong> (4 of them) — schema is now versioned and reproducible.</li>
+  <li><strong>CORS allowlist</strong> — explicit origin list instead of <code>*</code>.</li>
+  <li><strong>Pydantic hardening</strong> — strict request schemas (length bounds, <code>EmailStr</code>, <code>Literal</code> enums) so bad input is rejected at the boundary.</li>
+</ul>
+
+<h2>Phase 1 — Security &amp; Access Control <span class="pill green">Complete</span></h2>
+<ul>
+  <li><strong>Two-token auth</strong> — 15-min access JWT + 7-day httpOnly refresh token with <strong>rotation</strong> (theft detection).</li>
+  <li><strong>Two-tier rate limiting</strong> — Nginx per-IP + Redis per-user.</li>
+  <li><strong>RBAC policy layer</strong> — centralised role→permission map enforced via DI.</li>
+  <li><strong>Append-only audit log</strong> with correlation IDs threaded through every request.</li>
+</ul>
+
+<h2>Phase 2 — Product Features <span class="pill green">Complete</span></h2>
+<ul>
+  <li><strong>AI quizzes &amp; flashcards</strong> (Gemini JSON mode) with attempt scoring and per-question breakdowns.</li>
+  <li><strong>Progress tracking</strong> — averages, best scores, documents studied, recent attempts.</li>
+  <li><strong>Real-time notifications</strong> — WebSocket + Redis Pub/Sub for "document ready."</li>
+  <li><strong>Analytics dashboard</strong> — weekly score trend (DATE_TRUNC) + most-studied documents, all as SQL aggregates.</li>
+</ul>
+
+<h2>Phase 3 — Observability <span class="pill amber">Partial</span></h2>
+<ul>
+  <li><span class="pill green">Done</span> Structured JSON logging with correlation IDs.</li>
+  <li><span class="pill green">Done</span> Prometheus metrics (counter / histogram / gauge) with route-template labels to avoid cardinality explosion.</li>
+  <li><span class="pill amber">Open</span> Sentry (error tracking) and OpenTelemetry (full distributed tracing) — the correlation-ID groundwork is already in place to adopt OTel cleanly.</li>
+</ul>
+<div class="box why">
+  <div class="box-title">How to talk about the gaps (turn them into strengths)</div>
+  "Observability is layered. I have metrics and structured logs with correlation IDs — the two pillars you need to operate the system. The natural next step is wiring those correlation IDs into OpenTelemetry spans for full distributed tracing and adding Sentry for exception aggregation. I deliberately built the correlation-ID plumbing first <em>because</em> it's the foundation tracing builds on." Naming the next step precisely shows maturity.
+</div>
+
+<h2>Phase 4 — Scaling the Data Tier <span class="pill green">Complete</span></h2>
+<ul>
+  <li><strong>PgBouncer</strong> in transaction mode — hundreds of clients onto ~10 real connections.</li>
+  <li><strong>Nginx</strong> production config (TLS-ready, WebSocket upgrade, gzip, security headers, per-IP geo rate limiting, least-conn load balancing, response buffering).</li>
+  <li><strong>Read-replica</strong> infrastructure — heavy reads routed off the primary, with transparent fallback.</li>
+</ul>
+
+<h2>Phase 5 — Infrastructure &amp; Delivery <span class="pill green">Complete</span></h2>
+<ul>
+  <li><strong>Terraform</strong> — full AWS footprint (VPC, subnet, IGW, route table, security groups, EC2, Elastic IP, S3, IAM) as code.</li>
+  <li><strong>GitHub Actions</strong> — Lint → Test → Build → Deploy → post-deploy Smoke, with SHA-tagged images and rollback-on-health-failure.</li>
+  <li><strong>k6</strong> — smoke / load / spike suites; benchmark banked at <strong>50 VUs, p95 31ms, 0% errors</strong>.</li>
+</ul>
+
+<div class="box key">
+  <div class="box-title">The roadmap as a single sentence</div>
+  "I took a working AI prototype and walked it through the production checklist: <strong>harden the foundations, lock down security, ship the features, make it observable, scale the data tier, and automate delivery.</strong> Two items remain — Sentry and OpenTelemetry — and the logging/correlation-ID work I already did is the foundation for both."
+</div>
+
+<!-- ════════════════════ SECTION 6 ════════════════════ -->
+<div class="page-break"></div>
+<span class="section-tag">Section 6</span>
+<h1 class="section">The Interview Q&amp;A Bank</h1>
+<p class="lead">100+ questions grouped by theme. Each answer is tuned to be said out loud in 20–40 seconds and to tie back to something concrete in DocuBrain.</p>
+
+<h2>6.1 Python, Async &amp; Concurrency</h2>
+<div class="qa">
+  <div class="qn">Explain async/await like I'm a teammate.</div>
+  <div class="an">It's cooperative multitasking on one thread. <code>async def</code> makes a coroutine; <code>await</code> is a point where it pauses and hands control back to the event loop, which runs other ready coroutines while this one's I/O completes. Great for I/O-bound work, useless for CPU-bound work.</div>
+
+  <div class="qn">What is the event loop?</div>
+  <div class="an">A single-threaded scheduler that keeps a queue of ready tasks. It runs one until it hits an <code>await</code> on pending I/O, parks it, runs the next, and resumes parked tasks when their I/O is done. Uvicorn runs one per worker process.</div>
+
+  <div class="qn">What is the GIL and does it matter here?</div>
+  <div class="an">The Global Interpreter Lock lets only one thread execute Python bytecode at a time, so threads don't give true CPU parallelism. For DocuBrain it barely matters — the work is I/O-bound (waiting on DB/network), and async sidesteps the GIL by not needing threads at all. For CPU parallelism you'd use multiple <em>processes</em> (which is exactly what Celery workers are).</div>
+
+  <div class="qn">Concurrency vs parallelism?</div>
+  <div class="an">Concurrency = dealing with many things by interleaving (one async worker juggling 1000 connections). Parallelism = doing many things at literally the same instant (multiple CPU cores/processes). Async gives concurrency; Celery workers + multiple containers give parallelism.</div>
+
+  <div class="qn">How do you call a blocking/sync library from async code?</div>
+  <div class="an">Offload it to a thread pool so it doesn't block the loop: <code>anyio.to_thread.run_sync(fn)</code> or <code>loop.run_in_executor</code>. DocuBrain does this for every sync SDK — MinIO, pypdf, the sync Gemini client.</div>
+
+  <div class="qn">Threads vs processes vs async — when each?</div>
+  <div class="an">Async for high-concurrency I/O (the API). Threads for blocking I/O in libraries that aren't async-aware (wrap the sync SDK). Processes for CPU-bound or isolation needs (Celery workers). DocuBrain uses all three deliberately.</div>
+
+  <div class="qn">What's a ContextVar?</div>
+  <div class="an">Async-safe thread-local-style storage. Each request's async call-tree sees its own value. DocuBrain stores the correlation ID in one so every log line in a request auto-tags itself without passing the ID around.</div>
+</div>
+
+<h2>6.2 Databases, ORM, Pooling &amp; Transactions</h2>
+<div class="qa">
+  <div class="qn">What is connection pooling and why does it matter?</div>
+  <div class="an">Opening a DB connection is expensive (TCP + auth + a server-side process). A pool keeps a set of warm connections and lends them out. DocuBrain pools twice: SQLAlchemy's app-side pool (5+10) and PgBouncer in front of Postgres, which multiplexes 200 client conns onto ~10 real ones.</div>
+
+  <div class="qn">Walk me through ACID.</div>
+  <div class="an"><strong>A</strong>tomicity (all-or-nothing transactions), <strong>C</strong>onsistency (constraints always hold), <strong>I</strong>solation (concurrent txns don't corrupt each other), <strong>D</strong>urability (committed data survives a crash). Postgres gives all four; it's why the source of truth is Postgres, not Redis.</div>
+
+  <div class="qn">What's the N+1 problem and your fix?</div>
+  <div class="an">Fetching N parents then lazily loading each one's children = N+1 queries. Fix: eager-load with <code>selectinload</code>, which loads all children in one <code>IN</code> query. DocuBrain uses it for quiz items and attempts.</div>
+
+  <div class="qn">Why two DB drivers (asyncpg + psycopg2)?</div>
+  <div class="an">asyncpg is async — for the FastAPI event loop. psycopg2 is sync — for the Celery worker, which is a plain process with no loop. Right driver for each runtime.</div>
+
+  <div class="qn">What does an index actually do, and the cost?</div>
+  <div class="an">A B-tree index turns an O(n) sequential scan into an O(log n) lookup for filtered/sorted queries. Cost: extra storage and slower writes (the index must be updated on every insert/update). You index the columns you filter/join/sort on — in DocuBrain, every foreign key and <code>user_id</code>.</div>
+
+  <div class="qn">Explain the commit-before-slow-IO pattern you used.</div>
+  <div class="an">An AsyncSession holds a DB connection from its first query until commit/close. During a 30s LLM call that connection sits idle and asyncpg eventually closes it, breaking the later write. So I commit (release the connection to the pool) <em>before</em> the slow call; the session leases a fresh connection for the final insert. "Acquire late, release early."</div>
+
+  <div class="qn">PgBouncer transaction mode — what breaks?</div>
+  <div class="an">Session-scoped features: SET/RESET, LISTEN/NOTIFY, and session-level prepared statements. I disable asyncpg's prepared-statement cache to be compatible, and run Alembic migrations directly against Postgres (they need a persistent multi-statement session).</div>
+
+  <div class="qn">How do you handle DB schema changes safely?</div>
+  <div class="an">Alembic migrations — numbered, reversible, applied with <code>alembic upgrade head</code> in the container entrypoint before the app starts, and tested in CI against a real Postgres so a broken migration fails the build.</div>
+
+  <div class="qn">SQL vs NoSQL — why SQL here?</div>
+  <div class="an">The data is highly relational with integrity requirements (cascading ownership graphs). Postgres gives FKs, transactions, JSONB for the semi-structured bits (quiz options), and powerful aggregates. I do use a NoSQL-ish store where it fits — Pinecone for vectors, Redis for cache — so it's polyglot persistence, each store for its strength.</div>
+
+  <div class="qn">What's an optimistic vs pessimistic lock?</div>
+  <div class="an">Pessimistic = lock the row up front (<code>SELECT FOR UPDATE</code>), others wait. Optimistic = don't lock; check a version/timestamp at write time and retry on conflict. DocuBrain's writes are per-user and rarely contended, so neither is needed — but the framing matters for high-contention designs.</div>
+</div>
+
+<h2>6.3 Authentication &amp; Security</h2>
+<div class="qa">
+  <div class="qn">Why hash passwords with bcrypt and not SHA-256?</div>
+  <div class="an">Fast hashes (SHA-256) are <em>too</em> fast — an attacker with the hash file can try billions/sec. bcrypt is deliberately slow and salted, with a tunable work factor, so brute-forcing stolen hashes is computationally painful. Use a password-hashing function, not a general-purpose digest.</div>
+
+  <div class="qn">What's a salt and why does it matter?</div>
+  <div class="an">A random per-password value mixed into the hash so two users with the same password get different hashes. It defeats precomputed rainbow-table attacks. bcrypt embeds the salt in its output automatically.</div>
+
+  <div class="qn">JWT vs server-side sessions?</div>
+  <div class="an">JWTs are stateless — verify the signature, no DB lookup, scales horizontally with no shared session store. The downside is you can't easily revoke one before it expires. DocuBrain gets the best of both: stateless JWT for the frequent access path, plus a revocable Redis-backed refresh token for session control.</div>
+
+  <div class="qn">How does refresh-token rotation detect theft?</div>
+  <div class="an">Each refresh deletes the old token and issues a new one. If an attacker steals a refresh token and the legit user refreshes first, the attacker's now-rotated token misses in Redis → 401. The replay is caught.</div>
+
+  <div class="qn">Walk through the OWASP issues you defend against.</div>
+  <div class="an"><strong>Injection</strong> — parameterised ORM queries, never string-built SQL. <strong>XSS</strong> — refresh token in an httpOnly cookie JS can't read; Nginx <code>nosniff</code>. <strong>Broken auth</strong> — bcrypt + short JWTs + rotation + generic login errors (no user enumeration). <strong>Security misconfig</strong> — non-root container, secrets in env, <code>/metrics</code> blocked publicly. <strong>Unrestricted upload</strong> — magic-byte MIME check, size cap, rate limit.</div>
+
+  <div class="qn">Why magic-byte checking instead of trusting the extension?</div>
+  <div class="an">File extensions and the client-sent Content-Type are trivially spoofed. <code>python-magic</code> reads the actual file signature, so a malicious executable renamed <code>.pdf</code> is rejected because its bytes aren't a PDF.</div>
+
+  <div class="qn">What is CORS and how is it configured?</div>
+  <div class="an">Browsers block cross-origin requests unless the server opts in. DocuBrain uses an explicit origin <em>allowlist</em> (never <code>*</code> with credentials) and restricts methods/headers. It's a browser-enforced policy, not a server firewall — important nuance.</div>
+
+  <div class="qn">httpOnly, Secure, SameSite — what do they do?</div>
+  <div class="an"><strong>httpOnly</strong>: JS can't read the cookie (anti-XSS). <strong>Secure</strong>: only sent over HTTPS. <strong>SameSite</strong>: controls cross-site sending (anti-CSRF). DocuBrain sets all three on the refresh cookie, tightening them in production.</div>
+
+  <div class="qn">Why is the /metrics endpoint blocked at Nginx?</div>
+  <div class="an">It exposes internal telemetry (error rates, endpoint latencies, in-flight counts) that helps an attacker map the system. Prometheus scrapes it from inside the private network; the public edge returns 403.</div>
+</div>
+
+<h2>6.4 RAG, Embeddings &amp; LLMs</h2>
+<div class="qa">
+  <div class="qn">Explain RAG in two sentences.</div>
+  <div class="an">Retrieval-Augmented Generation: instead of relying on the model's training, you retrieve the most relevant chunks of <em>your</em> data and put them in the prompt as context. The model answers from that grounded context, so it's accurate, updatable, and can cite sources.</div>
+
+  <div class="qn">What is an embedding?</div>
+  <div class="an">A vector (768 numbers here) representing a piece of text's meaning, positioned so semantically similar text is geometrically close. It turns "meaning" into "distance," which makes semantic search a nearest-neighbour problem.</div>
+
+  <div class="qn">Why chunk documents, and how big?</div>
+  <div class="an">Embedding models and prompts have size limits, and retrieval is more precise on small focused passages. ~1500 chars balances precision against losing context, with 100-char overlap so meaning isn't cut at chunk boundaries.</div>
+
+  <div class="qn">Cosine similarity vs Euclidean distance?</div>
+  <div class="an">Cosine compares direction (angle), ignoring magnitude — ideal for text where direction encodes meaning and magnitude is mostly length noise. It's the standard metric for embedding search.</div>
+
+  <div class="qn">How do you stop one user retrieving another's documents?</div>
+  <div class="an">Every vector is stored with a <code>user_id</code> in its metadata, and every Pinecone query filters by the requester's <code>user_id</code>. Tenant isolation enforced at the vector-search layer.</div>
+
+  <div class="qn">How do you reduce hallucination?</div>
+  <div class="an">The prompt explicitly instructs "answer only from the provided context," retrieval grounds it in real passages, and sources are reported. If nothing relevant is retrieved, the context says so and the model is steered to admit it doesn't know rather than invent.</div>
+
+  <div class="qn">RAG vs fine-tuning?</div>
+  <div class="an">Fine-tuning changes weights — costly, slow to update, no citations, impractical per-user. RAG keeps knowledge external and instantly updatable, grounds answers, and cites. For per-user documents, RAG is the only viable approach.</div>
+
+  <div class="qn">How do you handle non-deterministic LLM output for quizzes?</div>
+  <div class="an">Force JSON mode (<code>response_mime_type="application/json"</code>), then defensively validate every item — drop malformed questions, clamp out-of-range indices, return a clean 502 if the whole response isn't valid JSON. Never trust the structure blindly.</div>
+</div>
+
+<h2>6.5 Distributed Systems &amp; Messaging</h2>
+<div class="qa">
+  <div class="qn">Why a message queue at all?</div>
+  <div class="an">To decouple a slow producer from a fast response. Upload returns instantly by pushing a job to Redis; the Celery worker processes it independently. It also smooths bursts (the queue buffers) and lets you scale workers separately from the API.</div>
+
+  <div class="qn">At-least-once vs exactly-once delivery?</div>
+  <div class="an">Exactly-once is essentially unachievable across a network. Celery with <code>acks_late</code> gives at-least-once — a task may run twice if a worker dies mid-job. The fix is idempotency.</div>
+
+  <div class="qn">How are your tasks idempotent?</div>
+  <div class="an">Re-processing a document re-embeds and upserts to the <em>same</em> deterministic Pinecone IDs (<code>{doc_id}_{i}</code>), overwriting in place. Running twice yields the same end state — no duplicate vectors.</div>
+
+  <div class="qn">How does the worker talk to the API for real-time updates?</div>
+  <div class="an">They're separate processes, so they can't call each other. The worker PUBLISHes to a Redis channel; the API process holding the user's WebSocket is SUBSCRIBEd and relays it. Pub/Sub decouples them and scales horizontally.</div>
+
+  <div class="qn">Explain the CAP theorem in your context.</div>
+  <div class="an">Under a network partition you choose Consistency or Availability. Postgres (primary) is CP — it favors consistency. The read replica introduces availability/scale at the cost of eventual consistency (lag), so I only send staleness-tolerant reads there and keep read-your-writes on the primary.</div>
+
+  <div class="qn">What is a circuit breaker and why three of them?</div>
+  <div class="an">A state machine that fails fast when a dependency is unhealthy, preventing cascading failures and giving it room to recover. Three independent breakers (Gemini/Pinecone/S3) so one slow dependency doesn't trip the others — and each is tuned to its recovery profile.</div>
+
+  <div class="qn">How would you make this multi-instance?</div>
+  <div class="an">The API is already stateless (JWT auth, state in Postgres/Redis), so you just run more containers behind Nginx — add lines to the upstream block. Redis Pub/Sub already handles cross-instance WebSocket fan-out. The DB tier scales via PgBouncer + read replicas. Nothing in the app assumes a single instance.</div>
+</div>
+
+<h2>6.6 Caching</h2>
+<div class="qa">
+  <div class="qn">What caching strategy do you use?</div>
+  <div class="an">Cache-aside (lazy loading): on read, check Redis; on miss, hit Postgres and write the result back with a TTL. Document lists 30s, chat-session lists 60s. The app, not the cache, owns the read-through logic.</div>
+
+  <div class="qn">How do you handle cache invalidation?</div>
+  <div class="an">Write-through invalidation: any mutation (upload, delete, new chat session) deletes the relevant cache key so the next read repopulates fresh. Short TTLs are a safety net so even a missed invalidation self-heals quickly.</div>
+
+  <div class="qn">"There are only two hard problems…" — how do you avoid stale data?</div>
+  <div class="an">Two layers: explicit invalidation on every write path, plus short TTLs as a backstop. For data that must be fresh (read-your-writes), I don't cache at all — correctness over a few ms of latency.</div>
+
+  <div class="qn">What's a cache stampede and do you risk it?</div>
+  <div class="an">When a hot key expires and many requests simultaneously miss and hammer the DB. At DocuBrain's scale (per-user keys, low concurrency per key) it's negligible; at scale you'd add jittered TTLs or a lock/"single-flight" so only one request rebuilds the key.</div>
+</div>
+
+<h2>6.7 Networking, HTTP &amp; Real-Time</h2>
+<div class="qa">
+  <div class="qn">What does a reverse proxy do that the app can't?</div>
+  <div class="an">TLS termination, edge rate limiting, load balancing, response buffering (shielding workers from slow clients), gzip, and being the single hardened internet-facing surface. It does the cross-cutting network concerns so the app does business logic.</div>
+
+  <div class="qn">SSE vs WebSocket vs long-polling?</div>
+  <div class="an">SSE = one-way server→client streaming over plain HTTP, auto-reconnect — perfect for chat token streaming. WebSocket = full-duplex, for true bidirectional/push — used for notifications. Long-polling = the legacy fallback (repeated requests held open); both SSE and WS are strictly better. I picked each by directionality.</div>
+
+  <div class="qn">Why does the WebSocket pass the token as a query param?</div>
+  <div class="an">Browsers can't set custom headers (like <code>Authorization</code>) on a WebSocket handshake. So the JWT goes in <code>?token=</code>, and it's validated <em>before</em> the socket is accepted — an invalid token never opens a connection.</div>
+
+  <div class="qn">How does Nginx hold thousands of connections cheaply?</div>
+  <div class="an">It's event-driven: each worker uses Linux <code>epoll</code> to watch many sockets in one process, reacting only when one is ready (O(1)), instead of one thread per connection. That's the architecture behind handling 10k+ idle/slow clients.</div>
+
+  <div class="qn">What status codes do you return and why?</div>
+  <div class="an">422 for validation (Pydantic, automatic), 401 vs 403 (unauthenticated vs unauthorized), 404 for not-found <em>and</em> not-owned (don't leak existence), 429 for rate limits (with <code>Retry-After</code>), 503 when a circuit breaker is open, 502 for a bad upstream/AI response. Semantically correct codes let clients react correctly.</div>
+</div>
+
+<h2>6.8 System Design &amp; Trade-offs</h2>
+<div class="qa">
+  <div class="qn">What's the single biggest bottleneck and how would you scale past it?</div>
+  <div class="an">The AI calls (Gemini) — they're the slow, rate-limited, costly path. I already move document embedding off-request into Celery and stream chat so it feels fast. To scale: more Celery workers for ingest throughput, a semantic cache for repeated questions, batching embeddings, and per-user quotas. The web/data tier scales trivially by comparison (more containers, PgBouncer, replicas).</div>
+
+  <div class="qn">How would you handle 100× the traffic?</div>
+  <div class="an">Horizontally scale stateless API containers behind Nginx; scale Celery workers independently; add Postgres read replicas and route reads to them; the cache absorbs read load; Pinecone and S3 are managed and scale themselves. The architecture was built to scale out — nothing holds local state.</div>
+
+  <div class="qn">What would you do next if you had a week?</div>
+  <div class="an">Finish Phase 3: wire correlation IDs into OpenTelemetry for distributed tracing and add Sentry for error aggregation. Then a semantic response cache for chat, and automated rollback in the deploy pipeline (the hook is already stubbed).</div>
+
+  <div class="qn">What's a design decision you'd revisit?</div>
+  <div class="an">The fixed-window rate limiter allows a boundary burst; at higher scale I'd move to a sliding-window or token-bucket in Redis. And I'd consider pgvector to collapse Pinecone into the Postgres I already run, trading zero-ops for cost and data locality — it's a localized swap because vector access is behind one infra client.</div>
+
+  <div class="qn">How do you test this system?</div>
+  <div class="an">CI runs lint → pytest against real Postgres/Redis service containers (after applying migrations) → build → deploy → a post-deploy k6 smoke test against live prod. Load is validated with k6 (50 VUs, p95 31ms, 0% errors). Real dependencies over mocks for integration confidence.</div>
+
+  <div class="qn">If the database goes down, what happens?</div>
+  <div class="an">Writes and most reads fail fast (the app surfaces a 5xx rather than hanging, thanks to connection timeouts). Cached reads may still serve from Redis until TTL. On recovery, <code>pool_pre_ping</code> transparently replaces dead connections — no restart needed. The startup probe also retries with exponential backoff so a slow-booting DB doesn't crash the app.</div>
+</div>
+
+<!-- ════════════════════ CHEAT SHEET ════════════════════ -->
+<div class="page-break"></div>
+<span class="section-tag">Appendix</span>
+<h1 class="section">One-Page Rapid-Fire Cheat Sheet</h1>
+<p class="lead">The last thing to skim before you walk in.</p>
+
+<table>
+  <tr><th>If they say…</th><th>You say…</th></tr>
+  <tr><td>"Walk me through the architecture"</td><td>Browser → Nginx (edge: TLS, rate limit, LB) → FastAPI (async) → services → repos → Postgres via PgBouncer. Slow work → Celery via Redis. Vectors → Pinecone. Files → S3. Real-time → Redis Pub/Sub + WebSocket.</td></tr>
+  <tr><td>"Why async?"</td><td>I/O-bound workload; one thread serves thousands of waiting requests; blocking SDKs are pushed to threads.</td></tr>
+  <tr><td>"Why two DB drivers?"</td><td>asyncpg for the async API, psycopg2 for the sync Celery worker.</td></tr>
+  <tr><td>"Why PgBouncer?"</td><td>200 client conns → ~10 real Postgres conns, transaction mode. Postgres connections are expensive OS processes.</td></tr>
+  <tr><td>"Redis does what?"</td><td>Four jobs: cache, Celery broker, rate-limit counters, Pub/Sub for WebSockets.</td></tr>
+  <tr><td>"Auth model?"</td><td>15-min access JWT (stateless) + 7-day random refresh token in Redis via httpOnly cookie, with rotation for theft detection.</td></tr>
+  <tr><td>"Explain RAG"</td><td>Chunk → embed (768-dim) → Pinecone. Query: embed → top-5 cosine search filtered by user_id → stuff into prompt → stream Gemini → cite sources.</td></tr>
+  <tr><td>"Resilience?"</td><td>Three circuit breakers (Gemini/Pinecone/S3), two-tier rate limiting, retries with backoff, graceful 503s.</td></tr>
+  <tr><td>"The clever DB trick?"</td><td>Commit before slow I/O to release the connection; the session leases a fresh one for the final write.</td></tr>
+  <tr><td>"Observability?"</td><td>Prometheus metrics + structured JSON logs + correlation IDs (ContextVar). Next: OpenTelemetry + Sentry.</td></tr>
+  <tr><td>"Scale story?"</td><td>Stateless API → more containers behind Nginx; workers scale independently; read replicas; managed Pinecone/S3.</td></tr>
+  <tr><td>"Performance numbers?"</td><td>k6: 50 VUs, p95 31ms, 0% errors, 26.5 req/s on the full Dockerised stack.</td></tr>
+  <tr><td>"Delivery?"</td><td>GitHub Actions: lint → test (real PG/Redis) → build (SHA-tagged) → deploy → prod smoke test. Terraform for AWS infra.</td></tr>
+</table>
+
+<div class="box key" style="margin-top:18px;">
+  <div class="box-title">Your closing line</div>
+  "The theme across the whole project is the same: <strong>fast path stays in the request, slow path moves out of band, and every external dependency is wrapped so one failure can't cascade.</strong> That's what makes an AI prototype behave like a production backend."
+</div>
+
+<div style="margin-top:30px; text-align:center; color:#9999b0; font-size:9pt; border-top:1px solid var(--line); padding-top:14px;">
+  DocuBrain — Engineering &amp; Interview Revision Guide &nbsp;·&nbsp; Generated from the live codebase &nbsp;·&nbsp; Good luck. You built this — now go defend it.
+</div>
+
+
+</body>
+</html>

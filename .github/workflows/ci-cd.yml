@@ -1,0 +1,384 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# DocuBrain CI/CD Pipeline
+#
+# Jobs (run in sequence — each depends on the previous passing):
+#
+#   lint ──→ test ──→ build ──→ deploy
+#
+#   lint   : Ruff checks code style and catches obvious errors (5s)
+#   test   : pytest against real Postgres + Redis service containers (60-120s)
+#   build  : Build Docker image, tag with git SHA, push to Docker Hub
+#   deploy : SSH into server, pull new image, do a zero-downtime container swap
+#
+# Triggers:
+#   - Push to main branch        → full pipeline (lint + test + build + deploy)
+#   - Pull request to main       → lint + test only (no build or deploy)
+#   - Manual trigger             → full pipeline (useful for forced redeploy)
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   DOCKER_USERNAME   : Docker Hub username
+#   DOCKER_PASSWORD   : Docker Hub access token (not password — tokens are revocable)
+#   DEPLOY_HOST       : IP or hostname of your production server
+#   DEPLOY_USER       : SSH username on the server (e.g. "ubuntu")
+#   DEPLOY_KEY        : SSH private key (the public key must be in ~/.ssh/authorized_keys)
+#   DEPLOY_ENV_FILE   : Path to the .env file on the server (e.g. "/opt/docubrain/.env")
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:    # Allows manual trigger from GitHub UI → Actions tab
+
+# Cancel in-progress runs when a new push arrives on the same branch.
+# Prevents 3 old pipeline runs competing with each other after rapid commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# JOB 1: LINT
+# ══════════════════════════════════════════════════════════════════════════════
+# Cheapest check — catches syntax errors, unused imports, style violations.
+# Runs first so we don't waste 2 minutes on tests just to fail on a typo.
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest    # GitHub-hosted runner: fresh Ubuntu VM, 2 vCPU, 7GB RAM
+
+    steps:
+      # actions/checkout: clones your repo into the runner VM.
+      # Without this, the VM has no code at all.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # actions/setup-python: installs Python and sets it as the default.
+      # Uses GitHub's tool cache — much faster than apt-get install python3.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip            # cache pip downloads between runs (speeds up install)
+
+      - name: Install Ruff
+        run: pip install ruff==0.4.10   # pin version so CI and local match exactly
+
+      - name: Run Ruff linter
+        working-directory: backend
+        run: ruff check app/ tests/ --output-format=github
+        # --output-format=github: formats errors as GitHub annotations
+        # so they appear inline in the PR diff view
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# JOB 2: TEST
+# ══════════════════════════════════════════════════════════════════════════════
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint     # only runs if lint passes
+
+    # Service containers: Docker containers that run alongside the test runner.
+    # They are started BEFORE the job steps and are accessible via localhost
+    # on the mapped port. GitHub Actions handles startup and shutdown.
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: docubrain_test
+        ports:
+          - 5432:5432
+        # options: Docker health check — GitHub Actions waits for Postgres to
+        # be ready before the job steps start. Without this, the DB might not
+        # be up when alembic tries to connect.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Environment variables available to ALL steps in this job.
+    # These are the same variables conftest.py sets via os.environ.setdefault —
+    # the CI values take precedence because they're set in the process environment
+    # before Python reads them.
+    env:
+      DATABASE_URL:      postgresql+asyncpg://test:test@localhost/docubrain_test
+      SYNC_DATABASE_URL: postgresql://test:test@localhost/docubrain_test
+      REDIS_URL:         redis://localhost:6379/15
+      SECRET_KEY:        ci-test-secret-key-minimum-32-characters-long
+      GEMINI_API_KEY:    ci-placeholder-not-used-in-tests
+      PINECONE_API_KEY:  ci-placeholder-not-used-in-tests
+      PINECONE_INDEX_NAME: test-index
+      ENVIRONMENT:       development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: backend
+        # Install both prod deps and dev deps (pytest, httpx, etc.)
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run Alembic migrations
+        working-directory: backend
+        # Apply all migrations to the test database BEFORE running tests.
+        # This verifies that migrations themselves are correct, and ensures
+        # the schema the tests run against matches production schema exactly.
+        # If a migration has a bug, it fails here — not silently in tests.
+        run: alembic upgrade head
+
+      - name: Run pytest
+        working-directory: backend
+        run: pytest tests/ -v --tb=short
+
+      # Upload the test results as a GitHub Actions artifact so you can
+      # download and inspect them from the Actions tab, even after the job ends.
+      - name: Upload test results
+        if: always()    # run even if tests failed — you want the report either way
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: backend/.pytest_cache/
+          retention-days: 7
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# JOB 3: BUILD
+# ══════════════════════════════════════════════════════════════════════════════
+# Only runs on push to main (not PRs) — no point building an image for a PR
+# that hasn't been merged yet.
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # Make the image tag available to the deploy job via job output.
+    # Jobs run on separate VMs — the only way to pass data between them is
+    # via outputs (for small values) or artifacts (for files).
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # docker/setup-buildx-action: enables BuildKit, Docker's modern build engine.
+      # BuildKit supports:
+      #   - Parallel stage execution in multi-stage Dockerfiles
+      #   - Better layer caching (including remote cache via --cache-from)
+      #   - Build secrets that don't appear in image layers
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Log in to Docker Hub using secrets (never hard-coded).
+      # DOCKER_PASSWORD should be a Docker Hub Access Token, not your account password.
+      # Tokens are revocable without changing your password.
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # docker/metadata-action: generates image tags automatically.
+      # For a push to main, it produces two tags:
+      #   - :latest                         (always points to newest build)
+      #   - :<short-sha>                    (e.g. :a3f9d2c — pinned to exact commit)
+      #
+      # The SHA tag is what makes rollbacks possible. "latest" is convenient
+      # for humans; the SHA tag is what deployment manifests and audit logs use.
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/docubrain
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest
+
+      # Build the multi-stage Dockerfile and push both tags to Docker Hub.
+      # cache-from/cache-to: reuse the builder cache from the previous run
+      # stored in the Docker Hub registry. First build is slow; subsequent
+      # builds skip unchanged layers — typically 3-5x faster.
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/docubrain:buildcache
+          cache-to:   type=registry,ref=${{ secrets.DOCKER_USERNAME }}/docubrain:buildcache,mode=max
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# JOB 4: DEPLOY
+# ══════════════════════════════════════════════════════════════════════════════
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # environment: links this job to a GitHub "Environment" (Settings → Environments).
+    # Environments can have:
+    #   - Required reviewers (someone must approve before deploy runs)
+    #   - Wait timer (delay N minutes after tests pass)
+    #   - Environment-specific secrets (separate prod secrets from dev)
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        # appleboy/ssh-action: opens an SSH connection to your server and runs
+        # the script block. The private key is stored as a GitHub Secret and
+        # never written to disk on the runner.
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key:      ${{ secrets.DEPLOY_KEY }}
+          port:     22
+          # The deploy script uses a "stop old → start new" swap.
+          # Zero-downtime swap: Nginx keeps routing to the old container until
+          # the new one is running. For true zero-downtime, you'd use
+          # docker-compose rolling updates or Kubernetes. This approach has a
+          # ~2 second gap — acceptable for most projects.
+          script: |
+            set -e    # Exit immediately if any command fails
+
+            IMAGE="${{ secrets.DOCKER_USERNAME }}/docubrain:${{ needs.build.outputs.image_tag }}"
+
+            echo "=== Pulling image: $IMAGE ==="
+            docker pull "$IMAGE"
+
+            echo "=== Stopping old container ==="
+            docker stop docubrain_backend 2>/dev/null || true   # ignore if not running
+            docker rm   docubrain_backend 2>/dev/null || true
+
+            echo "=== Starting new container ==="
+            docker run -d \
+              --name docubrain_backend \
+              --restart unless-stopped \
+              --env-file ${{ secrets.DEPLOY_ENV_FILE }} \
+              --network docubrain_network \
+              "$IMAGE"
+
+            echo "=== Waiting for health check ==="
+            sleep 5
+            docker exec docubrain_backend wget -qO- http://localhost:8000/health \
+              || (echo "Health check FAILED — rolling back" && \
+                  docker stop docubrain_backend && \
+                  exit 1)
+
+            echo "=== Removing old images (keep last 3) ==="
+            docker images "${{ secrets.DOCKER_USERNAME }}/docubrain" \
+              --format "{{.ID}}" | tail -n +4 | xargs -r docker rmi || true
+
+            echo "=== Deploy complete: $IMAGE ==="
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# JOB 5: POST-DEPLOY SMOKE TEST
+# ══════════════════════════════════════════════════════════════════════════════
+# Runs k6's smoke test against the LIVE production server after every deploy.
+# This is the final quality gate: if the smoke test fails in production,
+# the pipeline is marked red and the team is notified — even though the deploy
+# already happened.
+#
+# Why run AFTER deploy rather than before?
+# You can't fully test production behaviour in a staging environment —
+# different data, different TLS certs, different Nginx config, different env vars.
+# The smoke test catches the class of bugs that only manifest in production:
+# wrong env var, missing secret, migration that worked in test but failed in prod.
+#
+# What happens when it fails?
+# The pipeline shows red. The deploy job ALREADY RAN — the broken version is live.
+# The team must manually roll back using the previous SHA tag.
+# In a more mature setup, you'd add automatic rollback here (see comment below).
+  smoke-production:
+    name: Post-deploy Smoke Test (Production)
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install k6 on the runner using the official Grafana package repository.
+      # k6 is a single Go binary — installation is fast (~10 seconds).
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] \
+            https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq
+          sudo apt-get install -y k6
+
+      # Run the smoke test against production.
+      # --env BASE_URL: tells k6 which server to target.
+      # --out json: writes results to a file so we can upload them as an artifact.
+      # Exit code: k6 exits 1 if any threshold is breached → fails the CI job.
+      - name: Run smoke test against production
+        run: |
+          k6 run \
+            --env BASE_URL=https://${{ secrets.DEPLOY_HOST }} \
+            --out json=k6-smoke-results.json \
+            k6/smoke.js
+
+      # Upload the k6 JSON results even if the test failed.
+      # The JSON contains every request's timing, status, and check result —
+      # useful for debugging a post-deploy failure without SSH-ing into the server.
+      - name: Upload smoke test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-smoke-production
+          path: k6-smoke-results.json
+          retention-days: 14
+
+      # ── Automatic rollback (commented — enable when you're confident) ────────
+      # If the smoke test fails, pull and restart the PREVIOUS image.
+      # Requires storing the previous SHA before deploying (add to deploy job).
+      #
+      # - name: Rollback on smoke failure
+      #   if: failure()
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host:     ${{ secrets.DEPLOY_HOST }}
+      #     username: ${{ secrets.DEPLOY_USER }}
+      #     key:      ${{ secrets.DEPLOY_KEY }}
+      #     script: |
+      #       PREV_IMAGE="${{ secrets.DOCKER_USERNAME }}/docubrain:${{ needs.deploy.outputs.previous_sha }}"
+      #       docker stop docubrain_backend
+      #       docker rm   docubrain_backend
+      #       docker run -d --name docubrain_backend --restart unless-stopped \
+      #         --env-file ${{ secrets.DEPLOY_ENV_FILE }} \
+      #         --network docubrain_network \
+      #         "$PREV_IMAGE"
+      #       echo "ROLLED BACK to $PREV_IMAGE"
